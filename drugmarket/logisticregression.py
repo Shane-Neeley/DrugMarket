@@ -61,3 +61,18 @@ legend1, = plt.plot(train_costs, label='train cost')
 legend2, = plt.plot(test_costs, label='test cost')
 plt.legend([legend1, legend2])
 plt.show()
+
+# https://www.quora.com/What-does-it-show-when-test-cost-is-always-less-than-training-cost-in-a-CNN
+# Practically, training any ML model may result in one of three cases:
+#  1- Training error is much smaller than test error -> overfitting, the model learns the training data too well and overfits noise in it.
+#  2- Test error is much smaller than training error -> underfitting, the model didn't learn anything and the test result is mere coincidence.
+#  3- Training error and Test error are comparable (relatively equal) -> Job done, the model learns well given the available data.
+
+
+
+
+
+
+
+
+#

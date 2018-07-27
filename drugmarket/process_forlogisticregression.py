@@ -13,6 +13,13 @@ import os
 def get_data():
     df = pd.read_csv('drugmarket_dataframe.tsv', dtype={'MC':np.int32}, sep="\t")
 
+    # remove outliers
+    df = df[df['MC'] > 0]
+    df = df[ (df['Phase 4'] > 1) | (df['Phase 3'] > 1) | (df['Phase 2'] > 1) | (df['Phase 1'] > 1)] # has any trials
+    df = df[df['Symbol'] != "GILD"]
+    df = df[df['Symbol'] != "SYK"]
+    df = df[df['Symbol'] != "MDT"]
+
     # easier to work with numpy array
     data = df.values
 
@@ -48,10 +55,10 @@ def get_data():
 
     # split train and test
     # has total 354 rows
-    Xtrain = X[:-100]
-    Ytrain = Y[:-100]
-    Xtest = X[-100:]
-    Ytest = Y[-100:]
+    Xtrain = X[:-50]
+    Ytrain = Y[:-50]
+    Xtest = X[-50:]
+    Ytest = Y[-50:]
 
     # normalize phase columns
     for i in (0, 1, 2, 3):
