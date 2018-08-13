@@ -47,7 +47,7 @@ for i in range(10000): # ten thousand epochs
 
     # gradient descent
     # W -= learning_rate * (Xtrain.T.dot(pYtrain - Ytrain) - 0.1*W) # shane added regularization term
-    W -= learning_rate * Xtrain.T.dot(pYtrain - Ytrain) # shane added regularization term
+    W -= learning_rate * Xtrain.T.dot(pYtrain - Ytrain)
     b -= learning_rate * (pYtrain - Ytrain).sum()
     if i % 1000 == 0:
         print(i, ctrain, ctest)

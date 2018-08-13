@@ -9,14 +9,12 @@ import matplotlib.pyplot as plt
 from sklearn.utils import shuffle
 from process_forlogisticregression import get_data
 
-
 def y2indicator(y, K):
     N = len(y)
     ind = np.zeros((N, K))
     for i in range(N):
         ind[i, y[i]] = 1
     return ind
-
 
 Xtrain, Ytrain, Xtest, Ytest = get_data()
 D = Xtrain.shape[1]
@@ -34,15 +32,17 @@ W2 = np.random.randn(M, K)
 b2 = np.zeros(K)
 
 # make predictions
-
-
 def softmax(a):
     expA = np.exp(a)
     return expA / expA.sum(axis=1, keepdims=True)
 
+def sigmoid(a):
+    return 1 / (1 + np.exp(-a))
+
 def forward(X, W1, b1, W2, b2):
     Z = np.tanh(X.dot(W1) + b1)
-    return softmax(Z.dot(W2) + b2), Z
+    # return softmax(Z.dot(W2) + b2), Z
+    return sigmoid(Z.dot(W2) + b2), Z # doing binary classification so can use sigmoid
 
 def predict(P_Y_given_X):
     return np.argmax(P_Y_given_X, axis=1)
@@ -53,7 +53,6 @@ def classification_rate(Y, P):
 
 def cross_entropy(T, pY):
     return -np.mean(T * np.log(pY))
-
 
 # train loop
 train_costs = []
@@ -75,6 +74,7 @@ for i in range(10000):
     W1 -= learning_rate * Xtrain.T.dot(dZ)
     b1 -= learning_rate * dZ.sum(axis=0)
     if i % 1000 == 0:
+        print(pYtrain)
         print(i, ctrain, ctest)
 
 print("Final train classification_rate:",

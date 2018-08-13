@@ -16,6 +16,7 @@ def get_data():
     # remove outliers
     df = df[df['MC'] > 0]
     df = df[ (df['Phase 4'] > 1) | (df['Phase 3'] > 1) | (df['Phase 2'] > 1) | (df['Phase 1'] > 1)] # has any trials
+    df = df[ (df['Phase 4'] < 500) | (df['Phase 3'] < 500) | (df['Phase 2'] < 500) | (df['Phase 1'] < 500)] # has too many trials
     df = df[df['Symbol'] != "GILD"]
     df = df[df['Symbol'] != "SYK"]
     df = df[df['Symbol'] != "MDT"]
@@ -34,7 +35,6 @@ def get_data():
 
     # split features and labels
     X = data[:, 3:-2].astype(np.int32) # this just pulled excluded the last two columns
-
     Y = data[:, -1].astype(np.int32) # this is the last column
 
     # one-hot encode the categorical data
@@ -52,19 +52,18 @@ def get_data():
     # assign X2 back to X, since we don't need original anymore
     # X = X2
 
-    # split train and test
+    # split train and test, then convert to floats for normalization
     # has total 164 rows
-    Xtrain = X[:-50]
-    Ytrain = Y[:-50]
-    Xtest = X[-50:]
-    Ytest = Y[-50:]
+    Xtrain = X[:-120].astype(np.float32)
+    Ytrain = Y[:-120]
+    Xtest = X[-120:].astype(np.float32)
+    Ytest = Y[-120:]
 
-    # normalize phase columns
-    # Not doing this because some are so high, it ends outputting many zeros
-    # for i in (0, 1, 2, 3):
-    #     m = Xtrain[:, i].mean()
-    #     s = Xtrain[:, i].std()
-    #     Xtrain[:, i] = (Xtrain[:, i] - m) / s
-    #     Xtest[:, i] = (Xtest[:, i] - m) / s
+    # normalize phase columns by X - mean / std
+    for i in (0, 1, 2, 3):
+        m = Xtrain[:, i].mean()
+        s = Xtrain[:, i].std()
+        Xtrain[:, i] = (Xtrain[:, i] - m) / s
+        Xtest[:, i] = (Xtest[:, i] - m) / s
 
     return Xtrain, Ytrain, Xtest, Ytest
