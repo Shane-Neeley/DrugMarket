@@ -34,7 +34,6 @@ def get_data():
 
     # split features and labels
     X = data[:, 3:-2].astype(np.int32) # this just pulled excluded the last two columns
-    print(X.shape)
 
     Y = data[:, -1].astype(np.int32) # this is the last column
 
@@ -54,17 +53,18 @@ def get_data():
     # X = X2
 
     # split train and test
-    # has total 354 rows
+    # has total 164 rows
     Xtrain = X[:-50]
     Ytrain = Y[:-50]
     Xtest = X[-50:]
     Ytest = Y[-50:]
 
     # normalize phase columns
-    for i in (0, 1, 2, 3):
-        m = Xtrain[:, i].mean()
-        s = Xtrain[:, i].std()
-        Xtrain[:, i] = (Xtrain[:, i] - m) / s
-        Xtest[:, i] = (Xtest[:, i] - m) / s
+    # Not doing this because some are so high, it ends outputting many zeros
+    # for i in (0, 1, 2, 3):
+    #     m = Xtrain[:, i].mean()
+    #     s = Xtrain[:, i].std()
+    #     Xtrain[:, i] = (Xtrain[:, i] - m) / s
+    #     Xtest[:, i] = (Xtest[:, i] - m) / s
 
     return Xtrain, Ytrain, Xtest, Ytest

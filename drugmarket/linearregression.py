@@ -16,10 +16,8 @@ df = df[df['Symbol'] != "GILD"]
 df = df[df['Symbol'] != "SYK"]
 df = df[df['Symbol'] != "MDT"]
 
-
-print(df)
-df = df.sample(frac=1) # this is a row shuffle, mixes up data, because it's sorted by marketcap now
-print(df)
+# this is a row shuffle, mixes up data, because it's sorted by marketcap now
+df = df.sample(frac=1)
 
 # Note this is clearly not a linear relationship!
 # I think i need to do PCA, w/ additional data on the stock to find out how much influence trials has on marketcap

@@ -52,6 +52,8 @@ for i in range(10000): # ten thousand epochs
     if i % 1000 == 0:
         print(i, ctrain, ctest)
 
+print("Final W:", W)
+print("Final b:", b)
 print("Final train classification_rate:",
       classification_rate(Ytrain, np.round(pYtrain)))
 print("Final test classification_rate:",
