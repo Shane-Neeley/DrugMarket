@@ -74,7 +74,6 @@ for i in range(10000):
     W1 -= learning_rate * Xtrain.T.dot(dZ)
     b1 -= learning_rate * dZ.sum(axis=0)
     if i % 1000 == 0:
-        print(pYtrain)
         print(i, ctrain, ctest)
 
 print("Final train classification_rate:",

@@ -11,6 +11,7 @@ from pymongo import MongoClient
 ########################################################
 
 def getlisted():
+    print('running getlisted')
     # '''read in the listed files into db'''
     client = MongoClient("mongodb://localhost:27017")
 
@@ -85,11 +86,12 @@ def getlisted():
 
     listed.insert(records)
 
-    print('ran listed.py')
+    print('ran listed')
 
 ########################################################
 
 def mgtagger():
+    print('running mgtagger')
     # use medicalgroups name and synonyms to tag the stock listings
     # https://www.quantshare.com/sa-426-6-ways-to-download-free-intraday-and-tick-data-for-the-us-stock-market
     # http://wern-ancheta.com/blog/2015/04/05/getting-started-with-the-yahoo-finance-api/
@@ -133,12 +135,13 @@ def mgtagger():
                         {'$addToSet': {'medicalgroups': mg['name']}}
                     )
 
-    print('ran mgtagger.py')
+    print('ran mgtagger')
 
 ########################################################
 
 
 def phasecounts():
+    print('running phasecounts')
 
     client = MongoClient("mongodb://localhost:27017")
     # to get this data, must buy license from http://api.molecularmatch.com
@@ -171,40 +174,57 @@ def phasecounts():
                         pcounts[k] += 1
         return pcounts
 
+    def totalTrialCount(pcounts):
+        return pcounts['Phase 1'] + pcounts['Phase 2'] + pcounts['Phase 3'] + pcounts['Phase 4']
+
+    # for each tag record
     for cttag in cttag_a:
         pcounts = countPhase(cttag["tags"])
         for tag in cttag["tags"]:
             if tag["facet"] == "MEDICALGROUP":
+                # set the phase counts for all medicalgroups
                 if not tag["term"] in mg_phase_count:
                     mg_phase_count[tag["term"]] = pcounts
                 else:
                     for p in pcounts:
                         mg_phase_count[tag["term"]][p] += pcounts[p]
 
+    # for each of these medicalgroup phase counts
+    print(mg_phase_count)
     for i in mg_phase_count:
+        # find where the stocks have this medicalgroup
         listedMG = list(db_stocks.listed.find({'medicalgroups': i}))
         if len(listedMG) == 1:
-            db_stocks.listed.update(
-                {'_id': listedMG[0]['_id']},
-                {'$set': {'phaseCounts': {
-                    'Phase 1': mg_phase_count[i]['Phase 1'],
-                    'Phase 2': mg_phase_count[i]['Phase 2'],
-                    'Phase 3': mg_phase_count[i]['Phase 3'],
-                    'Phase 4': mg_phase_count[i]['Phase 4'],
-                }}}
-            )
+            # check to see if this trial update has more than the last (meaning it's a root tagging mg .. e.g. Pfizer tags, Pfizer, Inc. doesn't)
+            update = True
+            if 'phaseCounts' in listedMG[0]:
+                totalNow = totalTrialCount(listedMG[0]['phaseCounts'])
+                totalNew = totalTrialCount(mg_phase_count[i])
+                if totalNew < totalNow:
+                    update = False
+            if update:
+                db_stocks.listed.update(
+                    {'_id': listedMG[0]['_id']},
+                    {'$set': {'phaseCounts': {
+                        'Phase 1': mg_phase_count[i]['Phase 1'],
+                        'Phase 2': mg_phase_count[i]['Phase 2'],
+                        'Phase 3': mg_phase_count[i]['Phase 3'],
+                        'Phase 4': mg_phase_count[i]['Phase 4'],
+                    }}}
+                )
         elif len(listedMG) > 1:
             print('greater than 1 for ' + i)
             print(listedMG)
         elif len(listedMG) == 0:
             print('0 listed for ' + i)
 
-    print('ran phasecounts.py')
+    print('ran phasecounts')
 
 ########################################################
 
 
 def marketcap():
+    print('running marketcap')
 
     # This downloads the current market cap of the stock
     client = MongoClient("mongodb://localhost:27017")
@@ -232,4 +252,4 @@ def marketcap():
                 {'$set': {"marketcap": content['marketCap']}}
             )
 
-    print('ran marketcap.py')
+    print('ran marketcap')

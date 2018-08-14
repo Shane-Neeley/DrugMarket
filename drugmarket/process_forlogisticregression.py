@@ -17,9 +17,7 @@ def get_data():
     df = df[df['MC'] > 0]
     df = df[ (df['Phase 4'] > 1) | (df['Phase 3'] > 1) | (df['Phase 2'] > 1) | (df['Phase 1'] > 1)] # has any trials
     df = df[ (df['Phase 4'] < 500) | (df['Phase 3'] < 500) | (df['Phase 2'] < 500) | (df['Phase 1'] < 500)] # has too many trials
-    df = df[df['Symbol'] != "GILD"]
-    df = df[df['Symbol'] != "SYK"]
-    df = df[df['Symbol'] != "MDT"]
+    df = df[df['Symbol'] != "SYK"] # stryker an outlier
 
     # easier to work with numpy array
     data = df.values
@@ -29,6 +27,7 @@ def get_data():
     categ = np.array(data[:, -1] > 1e9, dtype=bool).astype(int)
     categ = np.array([categ]).T
     data = np.concatenate((data,categ),1)
+    print('size: ' + str(data.shape))
 
     # shuffle it
     np.random.shuffle(data)
