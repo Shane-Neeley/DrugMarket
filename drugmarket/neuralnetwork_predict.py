@@ -19,7 +19,7 @@ def y2indicator(y, K):
 Xtrain, Ytrain, Xtest, Ytest = get_data()
 D = Xtrain.shape[1]
 K = len(set(Ytrain) | set(Ytest))
-M = 5  # num hidden units
+M = 10  # num hidden units
 
 # convert to indicator
 Ytrain_ind = y2indicator(Ytrain, K)
@@ -58,7 +58,9 @@ def cross_entropy(T, pY):
 train_costs = []
 test_costs = []
 learning_rate = 0.001
-for i in range(10000):
+epochs = 2000
+l1 = 0  # try different values l1 regularization - what effect does it have on w?
+for i in range(epochs):
     pYtrain, Ztrain = forward(Xtrain, W1, b1, W2, b2)
     pYtest, Ztest = forward(Xtest, W1, b1, W2, b2)
 
@@ -68,12 +70,12 @@ for i in range(10000):
     test_costs.append(ctest)
 
     # gradient descent
-    W2 -= learning_rate * Ztrain.T.dot(pYtrain - Ytrain_ind)
+    W2 -= learning_rate * (Ztrain.T.dot(pYtrain - Ytrain_ind) + l1 * np.sign(W2))
     b2 -= learning_rate * (pYtrain - Ytrain_ind).sum(axis=0)
     dZ = (pYtrain - Ytrain_ind).dot(W2.T) * (1 - Ztrain * Ztrain)
-    W1 -= learning_rate * Xtrain.T.dot(dZ)
+    W1 -= learning_rate * (Xtrain.T.dot(dZ) + l1 * np.sign(W1))
     b1 -= learning_rate * dZ.sum(axis=0)
-    if i % 1000 == 0:
+    if i % 200 == 0:
         print(i, ctrain, ctest)
 
 print("Final train classification_rate:",

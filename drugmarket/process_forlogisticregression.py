@@ -15,8 +15,8 @@ def get_data():
 
     # remove outliers
     df = df[df['MC'] > 0]
-    df = df[ (df['Phase 4'] > 1) | (df['Phase 3'] > 1) | (df['Phase 2'] > 1) | (df['Phase 1'] > 1)] # has any trials
-    df = df[ (df['Phase 4'] < 500) | (df['Phase 3'] < 500) | (df['Phase 2'] < 500) | (df['Phase 1'] < 500)] # has too many trials
+    df = df[ (df['Phase 4'] > 0) | (df['Phase 3'] > 0) | (df['Phase 2'] > 0) | (df['Phase 1'] > 0)] # has any trials
+    # df = df[ (df['Phase 4'] < 500) | (df['Phase 3'] < 500) | (df['Phase 2'] < 500) | (df['Phase 1'] < 500)] # has too many trials
     df = df[df['Symbol'] != "SYK"] # stryker an outlier
 
     # easier to work with numpy array
@@ -52,11 +52,11 @@ def get_data():
     # X = X2
 
     # split train and test, then convert to floats for normalization
-    # has total 164 rows
-    Xtrain = X[:-120].astype(np.float32)
-    Ytrain = Y[:-120]
-    Xtest = X[-120:].astype(np.float32)
-    Ytest = Y[-120:]
+    # has total 263 rows
+    Xtrain = X[:-50].astype(np.float32)
+    Ytrain = Y[:-50]
+    Xtest = X[-50:].astype(np.float32)
+    Ytest = Y[-50:]
 
     # normalize phase columns by X - mean / std
     for i in (0, 1, 2, 3):

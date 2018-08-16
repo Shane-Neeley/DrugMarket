@@ -139,7 +139,6 @@ def mgtagger():
 
 ########################################################
 
-
 def phasecounts():
     print('running phasecounts')
 
@@ -158,6 +157,7 @@ def phasecounts():
 
     # build an object in memory of each medicalgroups count of open trial phases
     mg_phase_count = {}
+    mg_phase_condition_count = {}
 
     def countPhase(tags):
         pcounts = {
@@ -172,6 +172,7 @@ def phasecounts():
                 for k in phases:
                     if i['term'] == k:
                         pcounts[k] += 1
+                        break # or else a p1/p2 will get counted twice
         return pcounts
 
     def totalTrialCount(pcounts):
@@ -181,7 +182,7 @@ def phasecounts():
     for cttag in cttag_a:
         pcounts = countPhase(cttag["tags"])
         for tag in cttag["tags"]:
-            if tag["facet"] == "MEDICALGROUP":
+            if tag["facet"] == "MEDICALGROUP" and tag["suppress"] == False:
                 # set the phase counts for all medicalgroups
                 if not tag["term"] in mg_phase_count:
                     mg_phase_count[tag["term"]] = pcounts
@@ -189,8 +190,16 @@ def phasecounts():
                     for p in pcounts:
                         mg_phase_count[tag["term"]][p] += pcounts[p]
 
+                # start recording what priority 1 conditions these trials are for
+                # for tagc in cttag["tags"]:
+                #     if tagc["facet"] == "CONDITION" and tagc["suppress"] == False and tagc["priority"] == 1:
+                #         if not tag["term"] in mg_phase_condition_count:
+                #             mg_phase_condition_count[tag["term"]] = tagc["term"]
+                #         else:
+                #             for p in pcounts:
+                #                 mg_phase_condition_count[tag["term"]][p] += pcounts[p]
+
     # for each of these medicalgroup phase counts
-    print(mg_phase_count)
     for i in mg_phase_count:
         # find where the stocks have this medicalgroup
         listedMG = list(db_stocks.listed.find({'medicalgroups': i}))
@@ -222,6 +231,10 @@ def phasecounts():
 
 ########################################################
 
+def conditioncounts():
+
+
+########################################################
 
 def marketcap():
     print('running marketcap')
@@ -253,3 +266,6 @@ def marketcap():
             )
 
     print('ran marketcap')
+
+
+########################################################
