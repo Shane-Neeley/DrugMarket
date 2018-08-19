@@ -16,8 +16,8 @@ from process_forlogisticregression import get_data
 Xtrain, Ytrain, Xtest, Ytest = get_data()
 Nclass = Xtrain.shape[0]
 D = Xtrain.shape[1]
-K = len(set(Ytrain) | set(Ytest))
-M = 3  # num hidden units
+K = len(set(Ytrain) | set(Ytest)) # classes, only 0,1 here so len=2
+M = 5  # num hidden units
 
 X = Xtrain
 Y = Ytrain

@@ -6,12 +6,13 @@ from builtins import range
 import numpy as np
 import pandas as pd
 import os
+from tabulate import tabulate
 
 # normalize numerical columns
 # one-hot categorical columns
 
-def get_data():
-    df = pd.read_csv('drugmarket_dataframe.tsv', dtype={'MC':np.int32}, sep="\t")
+def get_data(classification=True, regression=False):
+    df = pd.read_csv('drugmarket_dataframe.tsv', dtype={'MC':np.int64}, sep="\t")
 
     # remove outliers
     df = df[df['MC'] > 0]
@@ -27,14 +28,16 @@ def get_data():
     categ = np.array(data[:, -1] > 1e9, dtype=bool).astype(int)
     categ = np.array([categ]).T
     data = np.concatenate((data,categ),1)
-    print('size: ' + str(data.shape))
 
     # shuffle it
     np.random.shuffle(data)
 
     # split features and labels
-    X = data[:, 3:-2].astype(np.int32) # this just pulled excluded the last two columns
-    Y = data[:, -1].astype(np.int32) # this is the last column
+    X = data[:, 3:-2].astype(np.int64) # this just pulled excluded the last two columns
+    if (classification == True):
+        Y = data[:, -1].astype(np.int64) # this is the last column, 0 or 1 class for billion dollar valuation
+    if (regression == True):
+        Y = data[:, -2].astype(np.int64) # continuous value for marketcap
 
     # one-hot encode the categorical data
     # create a new matrix X2 with the correct number of columns
@@ -52,11 +55,17 @@ def get_data():
     # X = X2
 
     # split train and test, then convert to floats for normalization
-    # has total 263 rows
-    Xtrain = X[:-50].astype(np.float32)
-    Ytrain = Y[:-50]
-    Xtest = X[-50:].astype(np.float32)
-    Ytest = Y[-50:]
+    # has total 363 rows, same some for test
+    limit = -50
+    Xtrain = X[:limit].astype(np.float32)
+    Ytrain = Y[:limit]
+    datatrain = data[:limit]
+    Xtest = X[limit:].astype(np.float32)
+    Ytest = Y[limit:]
+    datatest = data[limit:]
+
+    print('size Xtrain: ' + str(Xtrain.shape))
+    print('size Ytrain: ' + str(Ytrain.shape))
 
     # normalize phase columns by X - mean / std
     for i in (0, 1, 2, 3):
@@ -65,4 +74,4 @@ def get_data():
         Xtrain[:, i] = (Xtrain[:, i] - m) / s
         Xtest[:, i] = (Xtest[:, i] - m) / s
 
-    return Xtrain, Ytrain, Xtest, Ytest
+    return Xtrain, Ytrain, Xtest, Ytest, datatrain, datatest
