@@ -16,10 +16,10 @@ def y2indicator(y, K):
         ind[i, y[i]] = 1
     return ind
 
-Xtrain, Ytrain, Xtest, Ytest = get_data()
+Xtrain, Ytrain, Xtest, Ytest, datatrain, datatest = get_data()
 D = Xtrain.shape[1]
 K = len(set(Ytrain) | set(Ytest))
-M = 10  # num hidden units
+M = 100  # num hidden units
 
 # convert to indicator
 Ytrain_ind = y2indicator(Ytrain, K)

@@ -92,17 +92,22 @@ for i in range(2000):
 # print unnormalized data
 pred = Yhat*Yorig
 diff = pred-Yorig
-diffmultiple = (pred / Yorig)
+shanes_arbitrary_scalar = 100
+diffmultiple = (pred / Yorig) * shanes_arbitrary_scalar
 pred = pred.astype(np.int64)
 totaltrials = np.sum(datatrain[:,3:7], axis=1)
 result = np.column_stack((datatrain[:,1], datatrain[:,2], Yorig, pred, diffmultiple, totaltrials))
 df = pd.DataFrame(result, columns=["Company", "Stock", "MarketCap", "Prediction", "Diff X", "Total Trials"])
 # Sorting by those who the neural network predicted to have a higher value
 df = df.sort_values(['Diff X'], ascending=[False])
+
+# look at just sub billion valuation companies
+df2 = df[df["MarketCap"] < 1e9]
 # print w/ commas dollar format
-df['MarketCap'] = df.apply(lambda x: "{:,}".format(x['MarketCap']), axis=1)
-df['Prediction'] = df.apply(lambda x: "{:,}".format(x['Prediction']), axis=1)
-print(tabulate(df, headers='keys', tablefmt='psql'))
+df2['MarketCap'] = df2.apply(lambda x: "{:,}".format(x['MarketCap']), axis=1)
+df2['Prediction'] = df2.apply(lambda x: "{:,}".format(x['Prediction']), axis=1)
+
+print(tabulate(df2, headers='keys', tablefmt='psql'))
 
 # plot the costs
 # plt.plot(costs)

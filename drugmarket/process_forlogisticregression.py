@@ -66,6 +66,8 @@ def get_data(classification=True, regression=False):
 
     print('size Xtrain: ' + str(Xtrain.shape))
     print('size Ytrain: ' + str(Ytrain.shape))
+    print('size Xtest: ' + str(Xtest.shape))
+    print('size Ytest: ' + str(Ytest.shape))
 
     # normalize phase columns by X - mean / std
     for i in (0, 1, 2, 3):

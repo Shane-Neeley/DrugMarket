@@ -10,7 +10,7 @@ from sklearn.utils import shuffle
 from process_forlogisticregression import get_data
 
 # get the data
-Xtrain, Ytrain, Xtest, Ytest = get_data()
+Xtrain, Ytrain, Xtest, Ytest, datatrain, datatest = get_data()
 
 # randomly initialize weights
 D = Xtrain.shape[1]

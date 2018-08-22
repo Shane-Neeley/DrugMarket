@@ -13,7 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from process_forlogisticregression import get_data
 
-Xtrain, Ytrain, Xtest, Ytest = get_data()
+Xtrain, Ytrain, Xtest, Ytest, datatrain, datatest = get_data()
 Nclass = Xtrain.shape[0]
 D = Xtrain.shape[1]
 K = len(set(Ytrain) | set(Ytest)) # classes, only 0,1 here so len=2

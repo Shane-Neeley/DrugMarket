@@ -173,6 +173,7 @@ def phasecounts():
                     if i['term'] == k:
                         pcounts[k] += 1
                         break # or else a p1/p2 will get counted twice
+                        # TODO: i think these are still getting counted twice
         return pcounts
 
     def totalTrialCount(pcounts):
@@ -198,6 +199,8 @@ def phasecounts():
                 #         else:
                 #             for p in pcounts:
                 #                 mg_phase_condition_count[tag["term"]][p] += pcounts[p]
+
+                # TODO: are asco abstracts tagging medicalgroup sponsors?
 
     # for each of these medicalgroup phase counts
     for i in mg_phase_count:
