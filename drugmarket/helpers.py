@@ -7,8 +7,10 @@ from ftplib import FTP
 import time
 from decimal import Decimal
 from pymongo import MongoClient
+# TODO: are asco abstracts tagging medicalgroup sponsors?
 
 ########################################################
+
 
 def getlisted():
     print('running getlisted')
@@ -90,6 +92,7 @@ def getlisted():
 
 ########################################################
 
+
 def mgtagger():
     print('running mgtagger')
     # use medicalgroups name and synonyms to tag the stock listings
@@ -139,6 +142,7 @@ def mgtagger():
 
 ########################################################
 
+
 def phasecounts():
     print('running phasecounts')
 
@@ -146,9 +150,18 @@ def phasecounts():
     # to get this data, must buy license from http://api.molecularmatch.com
     molecularmatch = client.molecularmatch
 
-    q = {
-        "tags.facet": "MEDICALGROUP",
-        "tags.term": "Recruiting"
+    q = {"$and": [
+            {"tags.facet": "MEDICALGROUP"},
+            {"tags.term": {"$ne":"Temporarily not available"}},
+            {"tags.term": {"$ne":"Suspended"}},
+            {"tags.term": {"$ne":"Closed"}},
+            {"tags.term": {"$ne":"Completed"}},
+            {"tags.term": {"$ne":"Withdrawn"}},
+            {"tags.term": {"$ne":"Withheld"}},
+            {"tags.term": {"$ne":"Terminated"}},
+            {"tags.term": {"$ne":"No longer available"}},
+            {"tags.term": {"$ne":"Unknown"}}
+        ]
     }
     cttag_a = molecularmatch.cttag_a.find(q)
 
@@ -164,7 +177,7 @@ def phasecounts():
             'Phase 1': 0,
             'Phase 2': 0,
             'Phase 3': 0,
-            'Phase 4': 0,
+            'Phase 4': 0
         }
         phases = ['Phase 1', 'Phase 2', 'Phase 3', 'Phase 4']
         for i in tags:
@@ -172,35 +185,50 @@ def phasecounts():
                 for k in phases:
                     if i['term'] == k:
                         pcounts[k] += 1
-                        break # or else a p1/p2 will get counted twice
-                        # TODO: i think these are still getting counted twice
+        # choose the lowest phase for p1/p2 p2/p3
+        if pcounts['Phase 1'] == 1 and pcounts['Phase 2'] == 1:
+            pcounts['Phase 2'] = 0
+        if pcounts['Phase 2'] == 1 and pcounts['Phase 3'] == 1:
+            pcounts['Phase 3'] = 0
+        if pcounts['Phase 3'] == 1 and pcounts['Phase 4'] == 1:
+            pcounts['Phase 4'] = 0
+
         return pcounts
 
     def totalTrialCount(pcounts):
         return pcounts['Phase 1'] + pcounts['Phase 2'] + pcounts['Phase 3'] + pcounts['Phase 4']
 
-    # for each tag record
+    # for each tag record, assign phasecounts to the medicalgroups in the trial
     for cttag in cttag_a:
+        # print('on ' + cttag["id"])
         pcounts = countPhase(cttag["tags"])
+        phase = 'NA'
+        for p in pcounts:
+            if pcounts[p] == 1:
+                phase = p
         for tag in cttag["tags"]:
             if tag["facet"] == "MEDICALGROUP" and tag["suppress"] == False:
-                # set the phase counts for all medicalgroups
-                if not tag["term"] in mg_phase_count:
-                    mg_phase_count[tag["term"]] = pcounts
+                mgterm = tag["term"]
+                # build object of medicalgroup names with the pcounts
+                if mgterm not in mg_phase_count:
+                    mg_phase_count[mgterm] = pcounts
+                    mg_phase_condition_count[mgterm] = {}
                 else:
                     for p in pcounts:
-                        mg_phase_count[tag["term"]][p] += pcounts[p]
+                        mg_phase_count[mgterm][p] += pcounts[p]
 
-                # start recording what priority 1 conditions these trials are for
-                # for tagc in cttag["tags"]:
-                #     if tagc["facet"] == "CONDITION" and tagc["suppress"] == False and tagc["priority"] == 1:
-                #         if not tag["term"] in mg_phase_condition_count:
-                #             mg_phase_condition_count[tag["term"]] = tagc["term"]
-                #         else:
-                #             for p in pcounts:
-                #                 mg_phase_condition_count[tag["term"]][p] += pcounts[p]
-
-                # TODO: are asco abstracts tagging medicalgroup sponsors?
+                # go through tags again for conditions to save to this medgroup
+                for tag2 in cttag["tags"]:
+                    # build counts of conditions by phase and priority, not for inferred tags priority 0
+                    if tag2["facet"] == "CONDITION" and tag2["suppress"] == False and tag2["priority"] > 0:
+                        # build a combined term
+                        combinedterm = '_'.join(
+                            [tag2['term'], phase, str(tag2['priority'])])
+                        # put it on the medicalgroup
+                        if combinedterm not in mg_phase_condition_count[mgterm]:
+                            mg_phase_condition_count[mgterm][combinedterm] = 1
+                        else:
+                            mg_phase_condition_count[mgterm][combinedterm] += 1
 
     # for each of these medicalgroup phase counts
     for i in mg_phase_count:
@@ -217,12 +245,15 @@ def phasecounts():
             if update:
                 db_stocks.listed.update(
                     {'_id': listedMG[0]['_id']},
-                    {'$set': {'phaseCounts': {
-                        'Phase 1': mg_phase_count[i]['Phase 1'],
-                        'Phase 2': mg_phase_count[i]['Phase 2'],
-                        'Phase 3': mg_phase_count[i]['Phase 3'],
-                        'Phase 4': mg_phase_count[i]['Phase 4'],
-                    }}}
+                    {'$set': {
+                        'phaseCounts': {
+                            'Phase 1': mg_phase_count[i]['Phase 1'],
+                            'Phase 2': mg_phase_count[i]['Phase 2'],
+                            'Phase 3': mg_phase_count[i]['Phase 3'],
+                            'Phase 4': mg_phase_count[i]['Phase 4'],
+                        },
+                        'conditionCounts': mg_phase_condition_count[i]
+                    }}
                 )
         elif len(listedMG) > 1:
             print('greater than 1 for ' + i)
@@ -234,10 +265,9 @@ def phasecounts():
 
 ########################################################
 
-def conditioncounts():
-
 
 ########################################################
+
 
 def marketcap():
     print('running marketcap')
@@ -259,7 +289,8 @@ def marketcap():
 
     for li in cursor:
         time.sleep(0.1)
-        url = "https://api.iextrading.com/1.0/stock/" + li['_symbol'] + "/quote"
+        url = "https://api.iextrading.com/1.0/stock/" + \
+            li['_symbol'] + "/quote"
         with requests.Session() as s:
             download = s.get(url)
             content = json.loads(download.content.decode('utf-8'))
