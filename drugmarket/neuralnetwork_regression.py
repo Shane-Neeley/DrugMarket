@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from tabulate import tabulate
 from sklearn.utils import shuffle
-from process_forlogisticregression import get_data
+from process_data import get_data
 
 Xtrain, Ytrain, Xtest, Ytest, datatrain, datatest = get_data(regression=True)
 

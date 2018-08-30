@@ -11,7 +11,6 @@ from pymongo import MongoClient
 
 ########################################################
 
-
 def getlisted():
     print('running getlisted')
     # '''read in the listed files into db'''
@@ -92,7 +91,6 @@ def getlisted():
 
 ########################################################
 
-
 def mgtagger():
     print('running mgtagger')
     # use medicalgroups name and synonyms to tag the stock listings
@@ -141,7 +139,6 @@ def mgtagger():
     print('ran mgtagger')
 
 ########################################################
-
 
 def phasecounts():
     print('running phasecounts')
@@ -265,10 +262,6 @@ def phasecounts():
 
 ########################################################
 
-
-########################################################
-
-
 def marketcap():
     print('running marketcap')
 
@@ -300,6 +293,5 @@ def marketcap():
             )
 
     print('ran marketcap')
-
 
 ########################################################

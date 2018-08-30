@@ -11,7 +11,7 @@ from builtins import range
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
-from process_forlogisticregression import get_data
+from process_data import get_data
 
 Xtrain, Ytrain, Xtest, Ytest, datatrain, datatest = get_data()
 Nclass = Xtrain.shape[0]

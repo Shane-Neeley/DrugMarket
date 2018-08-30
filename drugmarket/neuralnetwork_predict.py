@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from sklearn.utils import shuffle
-from process_forlogisticregression import get_data
+from process_data import get_data
 
 def y2indicator(y, K):
     N = len(y)

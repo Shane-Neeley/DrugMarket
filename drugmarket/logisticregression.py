@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from sklearn.utils import shuffle
-from process_forlogisticregression import get_data
+from process_data import get_data
 
 # get the data
 Xtrain, Ytrain, Xtest, Ytest, datatrain, datatest = get_data()

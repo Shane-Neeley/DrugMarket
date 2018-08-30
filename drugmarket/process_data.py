@@ -34,6 +34,7 @@ def get_data(classification=True, regression=False):
 
     # split features and labels
     X = data[:, 3:-2].astype(np.int64) # this just pulled excluded the last two columns
+
     if (classification == True):
         Y = data[:, -1].astype(np.int64) # this is the last column, 0 or 1 class for billion dollar valuation
     if (regression == True):

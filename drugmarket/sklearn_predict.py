@@ -9,7 +9,7 @@ from builtins import range
 # sudo pip install -U future
 
 import sys
-from process_forlogisticregression import get_data
+from process_data import get_data
 
 from sklearn.neural_network import MLPClassifier
 from sklearn.utils import shuffle
