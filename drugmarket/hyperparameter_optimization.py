@@ -15,6 +15,11 @@ from theano_ann import ANN # internal module
 def random_search():
 
     X, Y, data = get_data()
+
+    # Make a bunch of copies of the small data (because variance matters) ... holy shit this really improved training
+    X = np.concatenate((X,X,X,X,X,X,X), 0)
+    Y = np.concatenate((Y,Y,Y,Y,Y,Y,Y), 0)
+
     X, Y = shuffle(X, Y)
     Ntrain = int(0.75 * len(X))
     Xtrain, Ytrain = X[:Ntrain], Y[:Ntrain]
@@ -43,7 +48,7 @@ def random_search():
         model.fit(
             Xtrain, Ytrain,
             learning_rate=10**log_lr, reg=10**log_l2,
-            mu=0.99, epochs=3000, show_fig=False
+            mu=0.99, epochs=4000, show_fig=False
         )
         validation_accuracy = model.score(Xtest, Ytest)
         train_accuracy = model.score(Xtrain, Ytrain)

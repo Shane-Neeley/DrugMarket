@@ -7,6 +7,9 @@ import numpy as np
 import pandas as pd
 import os
 from tabulate import tabulate
+import sklearn
+from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
 
 # normalize numerical columns
 # one-hot categorical columns
@@ -40,6 +43,40 @@ def get_data(classification=True, regression=False):
     if (regression == True):
         Y = data[:, -2].astype(np.int64) # continuous value for marketcap
 
+    # print(df)
+    print(X)
+    # print('X.shape before')
+    # print(X.shape)
+
+    # Too many tags, do dimensionality reduction just on the tags (column 4 and on ..)
+    pca = PCA()
+    reduced = pca.fit_transform(X[:, 4:])
+    # print('reduced.shape before')
+    # print(reduced.shape)
+    # plt.scatter(reduced[:,0], reduced[:,1], s=100, c=Y, alpha=0.5)
+    # plt.title('reduced')
+    # plt.show()
+    reduced = reduced[:, :25] # .. however much cutoff u want
+    # print('reduced.shape after cutoff')
+    # print(reduced.shape)
+    X = np.concatenate((X[:,:4], reduced),1)
+    # print('X.shape after concatenate')
+    # print(X.shape)
+    # print(X)
+    # plt.plot(pca.explained_variance_ratio_)
+    # plt.title('explained_variance_ratio_')
+    # plt.show()
+    # cumulative variance
+    # choose k = number of dimensions that gives us 95-99% variance
+    cumulative = []
+    last = 0
+    for v in pca.explained_variance_ratio_:
+        cumulative.append(last + v)
+        last = cumulative[-1]
+    # plt.plot(cumulative)
+    # plt.title('cumulative')
+    # plt.show()
+
 
     print('size X: ' + str(X.shape))
     print('size Y: ' + str(Y.shape))
@@ -51,3 +88,6 @@ def get_data(classification=True, regression=False):
         X[:, i] = (X[:, i] - m) / s
 
     return X, Y, data
+
+if __name__ == '__main__':
+    get_data()
