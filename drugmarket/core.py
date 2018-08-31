@@ -76,6 +76,7 @@ def runCore():
         'Phase 3': p3s,
         'Phase 4': p4s
     }
+    print(data)
 
     # make a item for each tag
     for tag in compositetags:
@@ -108,4 +109,5 @@ def runCore():
     # - Average price of drugs once approved per condition (use precedence like hep. C drug)
 
 
-runCore()
+if __name__ == "__main__":
+    runCore()

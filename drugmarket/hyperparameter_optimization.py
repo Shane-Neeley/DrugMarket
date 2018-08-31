@@ -14,11 +14,15 @@ from theano_ann import ANN # internal module
 
 def random_search():
 
-    X, Y, Xtest, Ytest, datatrain, datatest = get_data()
+    X, Y, data = get_data()
     X, Y = shuffle(X, Y)
-    Ntrain = int(0.7 * len(X))
+    Ntrain = int(0.75 * len(X))
     Xtrain, Ytrain = X[:Ntrain], Y[:Ntrain]
     Xtest, Ytest = X[Ntrain:], Y[Ntrain:]
+    print('size Xtrain: ' + str(Xtrain.shape))
+    print('size Ytrain: ' + str(Ytrain.shape))
+    print('size Xtest: ' + str(Xtest.shape))
+    print('size Ytest: ' + str(Ytest.shape))
 
     # starting hyperparameters
     M = 20 # hidden units
@@ -33,6 +37,7 @@ def random_search():
     best_lr = None
     best_l2 = None
     for _ in range(max_tries):
+        print('on try: ' + str(_+1) + '/' + str(max_tries))
         model = ANN([M] * nHidden)
         # choose params randomly on log base 10 scale
         model.fit(
@@ -43,10 +48,11 @@ def random_search():
         validation_accuracy = model.score(Xtest, Ytest)
         train_accuracy = model.score(Xtrain, Ytrain)
         print(
-            "validation_accuracy: %.3f, train_accuracy: %.3f, settings: %s, %s, %s" %
+            "validation_accuracy: %.3f, train_accuracy: %.3f, settings: %s (layers), %s (log_lr), %s (log_l2)" %
             (validation_accuracy, train_accuracy,
              [M] * nHidden, log_lr, log_l2)
         )
+        # keep the best parameters, then make modifications to them
         if validation_accuracy > best_validation_rate:
             best_validation_rate = validation_accuracy
             best_M = M
@@ -55,7 +61,7 @@ def random_search():
             best_l2 = log_l2
 
         # select new hyperparams
-        nHidden = best_nHidden + np.random.randint(-1, 2)  # -1, 0, or 1
+        nHidden = best_nHidden + np.random.randint(-1, 2)  # -1, 0, or 1, add, remove or keep same the layers
         nHidden = max(1, nHidden)
         M = best_M + np.random.randint(-1, 2) * 10
         M = max(10, M)
@@ -64,10 +70,10 @@ def random_search():
 
     print("Best validation_accuracy:", best_validation_rate)
     print("Best settings:")
-    print("best_M:", best_M)
-    print("best_nHidden:", best_nHidden)
-    print("learning_rate:", best_lr)
-    print("l2:", best_l2)
+    print("Best M (hidden units):", best_M)
+    print("Best nHidden (hidden layers):", best_nHidden)
+    print("Best learning_rate:", best_lr)
+    print("Best l2 regularization:", best_l2)
 
 
 if __name__ == '__main__':
