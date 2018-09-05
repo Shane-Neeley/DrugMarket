@@ -55,6 +55,8 @@ class ANN(object):
         # final layer
         K = len(set(Y))
         # print("K:", K)
+
+        # softmax for classification
         h = HiddenLayer(M1, K, T.nnet.softmax)
         self.layers.append(h)
 

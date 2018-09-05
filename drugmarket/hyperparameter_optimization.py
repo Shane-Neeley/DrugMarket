@@ -15,15 +15,15 @@ from theano_ann import ANN # internal module
 def random_search():
 
     X, Y, data = get_data()
-
-    # Make a bunch of copies of the small data (because variance matters) ... holy shit this really improved training
-    X = np.concatenate((X,X,X,X,X,X,X), 0)
-    Y = np.concatenate((Y,Y,Y,Y,Y,Y,Y), 0)
-
     X, Y = shuffle(X, Y)
     Ntrain = int(0.75 * len(X))
     Xtrain, Ytrain = X[:Ntrain], Y[:Ntrain]
     Xtest, Ytest = X[Ntrain:], Y[Ntrain:]
+
+    # Make copies of the small data (because variance matters?)
+    Xtrain = np.concatenate((Xtrain,Xtrain,Xtrain), 0)
+    Ytrain = np.concatenate((Ytrain,Ytrain,Ytrain), 0)
+
     print('size Xtrain: ' + str(Xtrain.shape))
     print('size Ytrain: ' + str(Ytrain.shape))
     print('size Xtest: ' + str(Xtest.shape))
@@ -41,6 +41,7 @@ def random_search():
     best_hls = None
     best_lr = None
     best_l2 = None
+    validation_accuracies = []
     for _ in range(max_tries):
         print('on try: ' + str(_+1) + '/' + str(max_tries))
         model = ANN([M] * nHidden)
@@ -57,6 +58,9 @@ def random_search():
             (validation_accuracy, train_accuracy,
              [M] * nHidden, log_lr, log_l2)
         )
+        # keep track of all
+        validation_accuracies.append(validation_accuracy)
+
         # keep the best parameters, then make modifications to them
         if validation_accuracy > best_validation_rate:
             best_validation_rate = validation_accuracy
@@ -73,7 +77,10 @@ def random_search():
         log_lr = best_lr + np.random.randint(-1, 2)
         log_l2 = best_l2 + np.random.randint(-1, 2)
 
+
+    # TODO: save these in mongodb, then read them and see if we beat it, in a new file run forward on best params
     print("Best validation_accuracy:", best_validation_rate)
+    print("Mean validation_accuracy:", np.mean(validation_accuracies))
     print("Best settings:")
     print("Best M (hidden units):", best_M)
     print("Best nHidden (hidden layers):", best_nHidden)

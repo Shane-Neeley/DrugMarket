@@ -49,8 +49,10 @@ def get_data(classification=True, regression=False):
     # print(X.shape)
 
     # Too many tags, do dimensionality reduction just on the tags (column 4 and on ..)
+
     pca = PCA()
     reduced = pca.fit_transform(X[:, 4:])
+
     # print('reduced.shape before')
     # print(reduced.shape)
     # plt.scatter(reduced[:,0], reduced[:,1], s=100, c=Y, alpha=0.5)
@@ -59,7 +61,13 @@ def get_data(classification=True, regression=False):
     reduced = reduced[:, :25] # .. however much cutoff u want
     # print('reduced.shape after cutoff')
     # print(reduced.shape)
+
+    # make new X
     X = np.concatenate((X[:,:4], reduced),1)
+
+    #X = X[:,:4] # without tag data
+
+
     # print('X.shape after concatenate')
     # print(X.shape)
     # print(X)
