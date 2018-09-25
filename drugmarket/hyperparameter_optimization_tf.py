@@ -56,10 +56,10 @@ def random_search():
         return tf.matmul(Z, W2) + b2
 
     # starting hyperparameters
-    M = 20 # hidden units
-    nHidden = 1 # hidden layers
+    M = 100 # hidden units
+    nHidden = 1 # hidden layers #TODO: how to add more layers in TF?
     log_lr = -4 # learning rate
-    log_l2 = -2  # l2 regularization, since we always want it to be positive
+    log_l2 = -2  # l2 regularization #TODO: how to add regularization in TF?
     max_tries = 30
 
     # loop through all possible hyperparameter settings
@@ -92,12 +92,14 @@ def random_search():
             )
         )
 
+        # Normal gradient descent, # input parameter is the learning rate
         # train_op = tf.train.GradientDescentOptimizer(10**log_lr).minimize(cost)  # construct an optimizer
-        # input parameter is the learning rate
+
+        # Optimized gradient descent
         train_op = tf.train.RMSPropOptimizer(10**log_lr, decay=0.99, momentum=0.9).minimize(cost)
 
+        # Prediction operation, input parameter is the axis on which to choose the max
         predict_op = tf.argmax(logits, 1)
-        # input parameter is the axis on which to choose the max
 
         # just stuff that has to be done
         sess = tf.Session()
@@ -112,7 +114,6 @@ def random_search():
 
         train_accuracy = np.mean(Ytrain == pred)
         validation_accuracy = np.mean(Ytest == test)
-        print("Accuracy:", validation_accuracy)
         print(
             "validation_accuracy: %.3f, train_accuracy: %.3f, settings: %s (layers), %s (log_lr), %s (log_l2)" %
             (validation_accuracy, train_accuracy,
@@ -130,7 +131,7 @@ def random_search():
         # select new hyperparams
         # nHidden = best_nHidden + np.random.randint(-1, 2)  # -1, 0, or 1, add, remove or keep same the layers
         # nHidden = max(1, nHidden)
-        M = best_M + np.random.randint(-1, 2) * 10
+        M = best_M + np.random.randint(-1, 2) * 50
         M = max(10, M)
         log_lr = best_lr + np.random.randint(-1, 2)
         log_l2 = best_l2 + np.random.randint(-1, 2)

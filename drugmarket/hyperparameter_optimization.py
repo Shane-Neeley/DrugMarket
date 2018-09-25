@@ -23,6 +23,8 @@ def random_search():
     # Make copies of the small data (because variance matters?)
     Xtrain = np.concatenate((Xtrain,Xtrain,Xtrain), 0)
     Ytrain = np.concatenate((Ytrain,Ytrain,Ytrain), 0)
+    # TODO: add some noise to the data ... add some noise to the weights (noise injection, should reduce overfitting)
+    # Add gaussian noise, small variance. (np.random.randn(N)*0.5) = Gaussian w/ 0.5 variance
 
     print('size Xtrain: ' + str(Xtrain.shape))
     print('size Ytrain: ' + str(Ytrain.shape))

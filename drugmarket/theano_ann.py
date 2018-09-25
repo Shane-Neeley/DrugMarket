@@ -89,6 +89,7 @@ class ANN(object):
         ] + [
             (dp, mu * dp - learning_rate * g) for dp, g in zip(dparams, grads)
         ]
+        # TODO: do I add noise injection to these updates here?
 
         train_op = theano.function(
             inputs=[thX, thY],

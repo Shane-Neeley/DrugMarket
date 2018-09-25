@@ -1,12 +1,7 @@
-from __future__ import print_function, division
-from builtins import range
-# Note: you may need to update your version of future
-# sudo pip install -U future
 
 import numpy as np
 import pandas as pd
 import os
-from tabulate import tabulate
 import sklearn
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
@@ -14,8 +9,12 @@ import matplotlib.pyplot as plt
 # normalize numerical columns
 # one-hot categorical columns
 
-def get_data(classification=True, regression=False):
-    df = pd.read_csv('drugmarket_dataframe.tsv', dtype={'MC':np.int64}, sep="\t")
+def get_data(classification=True, regression=False, download=False):
+    url = 'https://raw.githubusercontent.com/Shane-Neeley/DrugMarket/master/drugmarket/drugmarket_dataframe.tsv'
+    if download:
+        df = pd.read_csv('drugmarket_dataframe.tsv', dtype={'MC':np.int64}, sep="\t")
+    else:
+        df = pd.read_csv(url, dtype={'MC':np.int64}, sep="\t")
 
     # remove outliers
     df = df[df['MC'] > 0]
