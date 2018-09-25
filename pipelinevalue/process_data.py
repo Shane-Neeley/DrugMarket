@@ -5,7 +5,7 @@ import os
 import sklearn
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
-
+from pymongo import MongoClient
 
 def get_data():
 
@@ -14,10 +14,14 @@ def get_data():
     ids = np.genfromtxt("tagcounts_trialids.tsv", delimiter='\n', dtype=np.str)
 
     X = data[::-1].astype(np.int32)
-    Y = data[:, -1].astype(np.int32)
 
-    # shuffle it
-    np.random.shuffle(data)
+    # Y is the calculated per trial value
+    Y = []
+    db_stocks = MongoClient("mongodb://localhost:27017").stocks
+    for id in ids:
+        li = db_stocks.listed.find_one({"trials":id, "marketcapPerTrial":{"$exists":True}})
+        Y.append(li["marketcapPerTrial"])
+    Y = np.array(Y).astype(np.int32)
 
     print('X.shape before PCA')
     print(X.shape)

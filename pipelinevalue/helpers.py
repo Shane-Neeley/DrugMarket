@@ -24,7 +24,6 @@ def getlisted():
     print('running getlisted')
     # '''read in the listed files into db'''
     client = MongoClient("mongodb://localhost:27017")
-
     # create database stocks
     db_stocks = client.stocks
 
@@ -298,7 +297,7 @@ def tagcounts():
             if (ct % 100 == 0):
                 print(ct, 'rows made of', count)
             row = []
-            for h in sorted(headers):
+            for h in headers:
                 if h in totalTrials[trial]:
                     row.append(str(1))
                 else:
@@ -315,9 +314,10 @@ def tagcounts():
             f.write('\t'.join(row) + '\n')
             # write trials to record
             listed.update(
-                {"medicalgroups.name":mg},
+                {"medicalgroups":mg},
                 {"$set": {"trials": mgs_to_trialid[mg]}},
-                {"multi": True}
+                upsert=False,
+                multi=True
             )
 
 
@@ -348,7 +348,11 @@ def mgcalculate():
             # find_one might not find the best one?
             li = db.listed.find_one({"medicalgroups":mgname, "marketcap": {"$exists":True}})
             # print(li)
-            marketcapPerTrial = li["marketcap"] / len(trials)
+            if li["operatingincome"] > 0 and li["pipelineAdjustedMarketCap"] > 0:
+                mc = li["pipelineAdjustedMarketCap"]
+            else:
+                mc = li["marketcap"]
+            marketcapPerTrial = int( mc / len(trials) )
             print(mgname, li["marketcap"], marketcapPerTrial)
             db.listed.update(
                 {"_id":li["_id"]},
@@ -361,12 +365,25 @@ def mgcalculate():
 
 ########################################################
 
+# can i use actual backups to put on aws
+# can i connect to MM mongo to get cttag_a and medicalgroup
+def backup():
+    client = MongoClient('mongodb://localhost:27017')
+    db_stocks = client.stocks
+    newcoll = db_stocks["listed-" + date.today().strftime('%m-%d-%Y')]
+    newcoll.remove({})
+    for doc in db_stocks['listed'].find({}):
+        newcoll.insert(doc)
+
+########################################################
+
 if __name__ == "__main__":
-    getlisted()
-    mgtagger()
-    marketcap()
-    tagcounts()
+    # getlisted()
+    # mgtagger()
+    # marketcap()
+    # tagcounts()
     mgcalculate()
+    backup()
 
     # create a copy of the listeddb when this is ran? then process_data would
     # gather dbs from all dates. i should write the tagcounts to db as well so we can just back it all up by date.
