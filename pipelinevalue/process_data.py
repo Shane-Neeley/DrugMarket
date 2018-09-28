@@ -7,50 +7,50 @@ from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 from pymongo import MongoClient
 
-def get_data():
-
-    # easier to work with numpy array
-    data = np.genfromtxt("tagcounts.tsv", delimiter='\t', dtype=np.int32)
+def get_data(PCAtags = True):
     ids = np.genfromtxt("tagcounts_trialids.tsv", delimiter='\n', dtype=np.str)
-
-    X = data[::-1].astype(np.int32)
-
+    # easier to work with numpy array
+    X = np.genfromtxt("tagcounts.tsv", delimiter='\t', dtype=np.int32)
     # Y is the calculated per trial value
-    Y = []
-    db_stocks = MongoClient("mongodb://localhost:27017").stocks
-    for id in ids:
-        li = db_stocks.listed.find_one({"trials":id, "marketcapPerTrial":{"$exists":True}})
-        Y.append(li["marketcapPerTrial"])
-    Y = np.array(Y).astype(np.int32)
+    Y = np.genfromtxt("targets.tsv", delimiter='\n', dtype=np.int32)
+
+    Ystd = Y.std()
+    Ymean = Y.mean()
+    Y = ( (Y - Ymean) / Ystd + 1 ) # mean of 1, std of 1
 
     print('X.shape before PCA')
     print(X.shape)
 
-    # Too many tags, do dimensionality reduction just on the tags (column 4 and on ..)
-    pca = PCA()
-    reduced = pca.fit_transform(X)
-    reduced = reduced[:, :300] # .. however much cutoff u want
-    # make new X
-    X = reduced
-    plt.plot(pca.explained_variance_ratio_)
-    plt.title('explained_variance_ratio_')
-    plt.show()
+    if PCAtags:
+        # columns 0,4 are phase
+        Xtags = X[:,5:]
+        Xphase = X[:,:4]
 
-    # cumulative variance
-    # choose k = number of dimensions that gives us 95-99% variance
-    cumulative = []
-    last = 0
-    for v in pca.explained_variance_ratio_:
-        cumulative.append(last + v)
-        last = cumulative[-1]
-    plt.plot(cumulative)
-    plt.title('cumulative')
-    plt.show()
+        # Too many tags, do dimensionality reduction just on the tags (column 4 and on ..)
+        pca = PCA()
+        reduced = pca.fit_transform(Xtags)
+        reduced = reduced[:, :300] # .. however much cutoff u want
+        # make new X
+        X = np.concatenate((Xphase, reduced), 1)
+        # plt.plot(pca.explained_variance_ratio_)
+        # plt.title('explained_variance_ratio_')
+        # plt.show()
+
+        # cumulative variance
+        # choose k = number of dimensions that gives us 95-99% variance
+        cumulative = []
+        last = 0
+        for v in pca.explained_variance_ratio_:
+            cumulative.append(last + v)
+            last = cumulative[-1]
+        # plt.plot(cumulative)
+        # plt.title('cumulative')
+        # plt.show()
 
     print('size X: ' + str(X.shape))
     print('size Y: ' + str(Y.shape))
 
-    return X, Y
+    return X, Y, Ymean, Ystd, ids
 
 if __name__ == '__main__':
     get_data()

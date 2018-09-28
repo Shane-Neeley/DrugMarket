@@ -7,6 +7,7 @@ from builtins import range
 
 from keras.models import Sequential
 from keras.layers import Dense, Activation
+from keras import metrics
 from util import y2indicator
 from process_data import get_data
 
@@ -23,8 +24,7 @@ import matplotlib.pyplot as plt
 X, Y, d = get_data()
 
 # get shapes
-N, D = X.shape
-K = len(set(Y))
+
 
 # by default Keras wants one-hot encoded labels
 # there's another cost function we can use

@@ -215,10 +215,23 @@ def tagcounts():
         "medicalgroups.0":{"$exists": True},
         "marketcap":{"$exists": True},
     })
+
+    avoid = [
+        "National Institutes of Health",
+        "National Cancer Institute",
+        "Duke University",
+        "Harvard University",
+        "McKesson",
+        "Quest Diagnostics Incorporated",
+        "Thermo Fisher",
+        "Stryker"
+    ]
+
     mgs = []
     for li in licursor:
         for mg in li['medicalgroups']:
-            mgs.append(mg)
+            if mg not in avoid:
+                mgs.append(mg)
     mgs = np.unique(mgs).tolist()
 
     # Any trials with a medicalgroup tag we want that are open
@@ -315,7 +328,7 @@ def tagcounts():
             # write trials to record
             listed.update(
                 {"medicalgroups":mg},
-                {"$set": {"trials": mgs_to_trialid[mg]}},
+                {"$addToSet": {"trials": {"$each": mgs_to_trialid[mg]}}},
                 upsert=False,
                 multi=True
             )
@@ -328,14 +341,6 @@ def tagcounts():
 def mgcalculate():
     print('running mg financials calculate')
     # write the trials to the listed stock
-    avoid = [
-        "National Institutes of Health",
-        "National Cancer Institute",
-        "Duke University",
-        "Harvard University",
-        "McKesson",
-        "Quest Diagnostics Incorporated",
-    ]
 
     db = MongoClient("mongodb://localhost:27017").stocks
     data = np.genfromtxt("mgs_to_trialid.tsv", delimiter='\n', dtype=np.str)
@@ -343,12 +348,12 @@ def mgcalculate():
     for mg in data:
         mg = mg.split('\t')
         mgname = mg[0]
-        if mgname not in avoid:
-            trials = mg[1:]
-            # find_one might not find the best one?
-            li = db.listed.find_one({"medicalgroups":mgname, "marketcap": {"$exists":True}})
-            # print(li)
-            if li["operatingincome"] > 0 and li["pipelineAdjustedMarketCap"] > 0:
+        trials = mg[1:]
+        # find_one might not find the best one?
+        li = db.listed.find_one({"medicalgroups":mgname, "marketcap": {"$exists":True}, "marketcap": {"$gt":0}})
+        print(li)
+        if li:
+            if 'operatingincome' in li and li["operatingincome"] and li["operatingincome"] > 0 and li["pipelineAdjustedMarketCap"] > 0:
                 mc = li["pipelineAdjustedMarketCap"]
             else:
                 mc = li["marketcap"]
@@ -362,6 +367,17 @@ def mgcalculate():
 
         # list the ones with most valuable trials, there may be outliers here like ,
         # healthcare companies with big cap and one trial ... i could find these like that too. big cap but few trials.
+
+
+def gettargets():
+    open('targets.tsv', 'w')
+    ids = np.genfromtxt("tagcounts_trialids.tsv", delimiter='\n', dtype=np.str)
+    # Y is the calculated per trial value
+    db_stocks = MongoClient("mongodb://localhost:27017").stocks
+    with open('targets.tsv', 'a') as f:
+        for id in ids:
+            li = db_stocks.listed.find_one({"trials":id, "marketcapPerTrial":{"$exists":True}})
+            f.write(str(li["marketcapPerTrial"]) + '\n')
 
 ########################################################
 
@@ -382,7 +398,8 @@ if __name__ == "__main__":
     # mgtagger()
     # marketcap()
     # tagcounts()
-    mgcalculate()
+    # mgcalculate()
+    gettargets()
     backup()
 
     # create a copy of the listeddb when this is ran? then process_data would
