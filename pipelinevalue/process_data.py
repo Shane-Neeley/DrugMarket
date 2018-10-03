@@ -7,6 +7,10 @@ from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 from pymongo import MongoClient
 
+# TODO: really what i gotta do is back up each cttag w/ a date,
+# then perform the tag counting, because just because i didn't look for something
+# doesnt mean it wasnt there.
+
 def get_data(PCAtags = True):
     ids = []
     # get X, Y as the total of all acquired dates
@@ -15,7 +19,7 @@ def get_data(PCAtags = True):
     db = MongoClient("mongodb://localhost:27017").stocks
     for coll in db.collection_names():
         if 'tagdata-' in coll:
-            for d in db[coll].find({"id":{"$ne":"headers"}}):
+            for d in db[coll].find({}):
                 ids.append(d['id'])
                 X.append(d['data'])
                 Y.append(d['marketcapPerTrial'])

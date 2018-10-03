@@ -10,15 +10,9 @@ from pymongo import MongoClient
 from datetime import date
 import os
 import subprocess
-# TODO: are asco abstracts tagging medicalgroup sponsors?
 
-def text_to_num(text):
-    d = {'M': 6, 'B': 9}
-    if text[-1] in d:
-        num, magnitude = text[:-1], text[-1]
-        return int(Decimal(num) * 10 ** d[magnitude])
-    else:
-        return int(Decimal(text))
+# set a global today
+today = date.today().strftime('%m-%d-%Y')
 
 ########################################################
 
@@ -60,8 +54,6 @@ def getlisted():
         records.append(i)
 
     for i in records:
-        # set a dateAcquired on the data
-        # i['dateAcquired'] = date.today()
 
         # normalize - create internal symbol
         if 'Symbol' in i:
@@ -98,6 +90,7 @@ def getlisted():
         for _ng in nogood:
             i['_name'] = i['_name'].replace(_ng, '')
         i['_name'] = i['_name'].strip()
+        i['lastupdated'] = today
 
     listed.insert(records)
 
@@ -254,39 +247,62 @@ def tagcounts():
     }
     cttag_a = db_stocks.cttag_a.find(q)
     count = db_stocks.cttag_a.count(q)
+    # create a cttag_a_open_mg
+    cttag2 = db_stocks['cttag_open_mg']
+    cttag2.remove({})
+    for cttag in cttag_a:
+        cttag2.insert(cttag)
+    cttag_a.rewind()
 
-
-    tags_I_Want = ["CONDITION", "PHASE", "DRUGCLASS"]
-    priority_I_Want = [1] # 2 also
     totalTrials = {}
     mgs_to_trialid = {}
-    # for each tag record, expand out the tags I want
+    # for each tag record, collect composite keys of all tags
     ct = 0
     for cttag in cttag_a:
         ct+=1
-        if ct % 100 == 0:
+        if ct % 1000 == 0:
             print(ct, 'tag records of', count)
         totalTrials[cttag['id']] = {}
         for tag in cttag["tags"]:
-            # collect the dictionary of trials to tags present
-            if tag["facet"] in tags_I_Want and tag["suppress"] == False and tag['priority'] in priority_I_Want and tag['filterType'] == 'include':
+            if tag['filterType'] == 'include' and tag['suppress'] == False:
+                # collect the dictionary of all tags for this trial, limit later
                 compkey = tag["compositeKey"] + str(tag["priority"])
                 totalTrials[cttag['id']][compkey] = True
+                # find which medicalgroup this trial belongs to
+                if tag["facet"] == "MEDICALGROUP" and tag["term"] in mgs:
+                    if tag["term"] not in mgs_to_trialid:
+                        mgs_to_trialid[tag["term"]] = [cttag['id']]
+                    else:
+                        mgs_to_trialid[tag["term"]].append(cttag['id'])
 
-            # find which medicalgroup this trial belongs to
-            if tag["facet"] == "MEDICALGROUP" and tag["term"] in mgs:
-                if tag["term"] not in mgs_to_trialid:
-                    mgs_to_trialid[tag["term"]] = [cttag['id']]
-                else:
-                    mgs_to_trialid[tag["term"]].append(cttag['id'])
+    # write trials to listed record
+    for mg in mgs_to_trialid:
+        listed.update(
+            {"medicalgroups":mg},
+            {"$addToSet": {"trials": {"$each": mgs_to_trialid[mg]}}},
+            upsert=False,
+            multi=True
+        )
 
-    # Build a big ass, sparse ass matrix
+    # apply mask for just the data I want for all historical data
+    tags_I_Want = ["CONDITION", "PHASE", "DRUGCLASS"]
+    priority_I_Want = ['include1'] # include2 also
     headers = []
-    matrix = []
+    # for each trial tag
     for trial in totalTrials:
-        for compkey in totalTrials[trial]:
-            if compkey not in headers:
-                headers.append(compkey)
+        for tag in totalTrials[trial]:
+            hasFacet = False
+            hasPriority = False
+            for f in tags_I_Want:
+                if f in tag:
+                    hasFacet = True
+            for p in priority_I_Want:
+                if p in tag:
+                    hasPriority = True
+            # if i want this tag, record it's compkey in headers
+            if hasFacet and hasPriority:
+                if tag not in headers:
+                    headers.append(tag)
 
     # get the phase tags to the top of the headers, and sort the list
     phaseKeys = ["Phase 1PHASEinclude1", "Phase 2PHASEinclude1", "Phase 3PHASEinclude1", "Phase 4PHASEinclude1"]
@@ -295,43 +311,53 @@ def tagcounts():
         if h not in phaseKeys:
             hnew.append(h)
     headers = phaseKeys + hnew
-
     print('total features: ', len(headers))
 
-    ct = 0
-    # TODO: intead of file make mongo rec {id:NCT001, data: xxx, data:"0 1 0 ..", or {tagkey1:0,tagkey2:1} }
-    # .. then mongo records read into a tagcounts.tsv at process_data time
-    # But tags change over time, new ones are added
     # open a new tag table
     tagdata = db_stocks['tagdata']
     tagdata.remove({})
-    # write the headers as the first record to keep track of what the data means
-    tagdata.insert({'id':'headers', 'data': headers})
 
+    # collect data based on these
+    ct = 0
     for trial in totalTrials:
         ct+=1
-        if (ct % 100 == 0):
-            print(ct, 'rows made of', count)
-        row = []
+        if ct % 1000 == 0:
+            print(ct, 'trial ...', count)
+        data = []
         for h in headers:
             if h in totalTrials[trial]:
-                row.append(str(1))
+                data.append(1)
             else:
-                row.append(str(0))
+                data.append(0)
         rec = {
             'id': trial,
-            'data': row
+            'tags': totalTrials[trial],
+            'data': data
         }
-        tagdata.insert(rec)
+        tagdata.insert(rec, check_keys=False) #check_keys for '.' not all
 
-    # write trials to record
-    for mg in mgs_to_trialid:
-        listed.update(
-            {"medicalgroups":mg},
-            {"$addToSet": {"trials": {"$each": mgs_to_trialid[mg]}}},
-            upsert=False,
-            multi=True
-        )
+    # do the same for historical tagdata
+    for coll in db_stocks.collection_names():
+        if 'tagdata-' in coll:
+            ct=0
+            for trial in db_stocks[coll].find({}):
+                ct+=1
+                if ct % 1000 == 0:
+                    print(ct, 'trial ...', count, coll)
+                data = []
+                for h in headers:
+                    if h in trial['tags']:
+                        data.append(1)
+                    else:
+                        data.append(0)
+            # set the new data that is based on the new headers, but the old tags on the that trial
+            db_stocks[coll].update(
+                {'id': trial['id']},
+                {'$set':{
+                    'data': data,
+                    'lastupdated': today
+                }}
+            )
 
 
     print('ran tagcounts')
@@ -350,7 +376,12 @@ def mgcalculate():
         "marketcap": {"$gt":0}
     })
 
+    ct = 0
     for li in licursor:
+        ct+=1
+        if ct % 1000 == 0:
+            print(ct, 'mgcalculate ...')
+
         mgname = li['medicalgroups'][0] # first one??
         trials = li['trials']
         # use adjusted cap instead
@@ -359,8 +390,10 @@ def mgcalculate():
         else:
             mc = li["marketcap"]
         marketcapPerTrial = int( mc / len(trials) )
-        print(mgname, li["marketcap"], marketcapPerTrial)
+
+        # print(mgname, li["marketcap"], marketcapPerTrial)
         # now go through each of these trials and write the marketcap as the Y target
+        # for historical, keep the old Y
         for trial in trials:
             db['tagdata'].update(
                 {"id": trial},
@@ -371,33 +404,33 @@ def mgcalculate():
                 upsert=False
             )
 
-
 ########################################################
 
 def backup():
     print('running backup')
     client = MongoClient('mongodb://localhost:27017')
     db_stocks = client.stocks
-    today = date.today().strftime('%m-%d-%Y')
+    # listed
     newcoll = db_stocks["listed-" + today]
     newcoll.remove({})
     for doc in db_stocks['listed'].find({}):
-        newcoll.insert(doc)
+        newcoll.insert(doc, check_keys=False)
+    # tagdata
     newcoll2 = db_stocks["tagdata-" + today]
     newcoll2.remove({})
     for doc in db_stocks['tagdata'].find({}):
-        newcoll2.insert(doc)
+        newcoll2.insert(doc, check_keys=False)
 
 ########################################################
 
 if __name__ == "__main__":
-    getlisted()
-    mmdata()
-    mgtagger()
-    marketcap()
+    # getlisted()
+    # mmdata()
+    # mgtagger()
+    # marketcap()
     tagcounts()
-    mgcalculate()
-    backup()
+    # mgcalculate()
+    # backup()
 
     # create a copy of the listeddb when this is ran? then process_data would
     # gather dbs from all dates. i should write the tagcounts to db as well so we can just back it all up by date.
