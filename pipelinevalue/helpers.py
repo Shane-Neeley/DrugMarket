@@ -8,6 +8,8 @@ import time
 from decimal import Decimal
 from pymongo import MongoClient
 from datetime import date
+import os
+import subprocess
 # TODO: are asco abstracts tagging medicalgroup sponsors?
 
 def text_to_num(text):
@@ -27,8 +29,9 @@ def getlisted():
     # create database stocks
     db_stocks = client.stocks
 
-    # get collection, do not delete it, as data will be timepoint based
+    # get collection, delete it
     listed = db_stocks['listed']
+    listed.remove({})
 
     ftp = FTP("ftp.nasdaqtrader.com")
     ftp.login()
@@ -102,24 +105,24 @@ def getlisted():
 
 ########################################################
 
+# Get latest data
+def mmdata():
+    desktop = os.path.join(os.path.join(os.path.expanduser('~')), 'Desktop')
+    bashCommand = "sh " + desktop + "/dump-restore.sh"
+    process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+    output, error = process.communicate()
+
+########################################################
+
 def mgtagger():
     # use medicalgroups name and synonyms to tag the stock listings
     print('running mg tagging ...')
 
     client = MongoClient("mongodb://localhost:27017")
     # to get this data, must buy license from http://api.molecularmatch.com
-    molecularmatch = client.molecularmatch
-    mgcursor = molecularmatch.medicalgroup.find({'exclude': False})
-
     db_stocks = client.stocks
+    mgcursor = db_stocks.medicalgroup.find({'exclude': False})
     listed = db_stocks.listed
-
-    # first unset all the medicalgroups
-    listed.update(
-        {},
-        {'$unset': {'medicalgroups': True}},
-        multi=True, upsert=False
-    )
 
     # for each medical group in molecularmatch
     for mg in mgcursor:
@@ -156,7 +159,6 @@ def marketcap():
     cursor = db.listed.find({"medicalgroups.0": {"$exists": True}})
     # for each stock with tagged medicalgroups
     for li in cursor:
-        time.sleep(0.1)
         # download the market cap and save to the stock
         url = "https://api.iextrading.com/1.0/stock/" + li['_symbol'] + "/quote"
         with requests.Session() as s:
@@ -206,16 +208,17 @@ def tagcounts():
 
     client = MongoClient("mongodb://localhost:27017")
     # to get this data, must buy license from http://api.molecularmatch.com
-    molecularmatch = client.molecularmatch
-
     # get a unique list of medicalgroups to query trials for
     db_stocks = client.stocks
     listed = db_stocks['listed']
     licursor = listed.find({
         "medicalgroups.0":{"$exists": True},
         "marketcap":{"$exists": True},
+        "marketcap":{"$gt": 0},
     })
 
+    # list the ones with most valuable trials, there may be outliers here like ,
+    # healthcare companies with big cap and one trial ... i could find these like that too. big cap but few trials.
     avoid = [
         "National Institutes of Health",
         "National Cancer Institute",
@@ -249,11 +252,11 @@ def tagcounts():
             {"tags.term": {"$ne":"Unknown"}}
         ]
     }
-    cttag_a = molecularmatch.cttag_a.find(q)
-    count = molecularmatch.cttag_a.count(q)
+    cttag_a = db_stocks.cttag_a.find(q)
+    count = db_stocks.cttag_a.count(q)
 
 
-    tags_I_Want = ["CONDITION", "PHASE"] # could do drugclass?
+    tags_I_Want = ["CONDITION", "PHASE", "DRUGCLASS"]
     priority_I_Want = [1] # 2 also
     totalTrials = {}
     mgs_to_trialid = {}
@@ -295,43 +298,40 @@ def tagcounts():
 
     print('total features: ', len(headers))
 
-    # No headers just raw data 1s,0s, in this file
-    # headers = ["id", "day acquired"] + headers
-    # dayacquired = str(date.today())
-
-    # overwrite the file
-    open('tagcounts.tsv', 'w')
-    open('tagcounts_trialids.tsv', 'w')
-
     ct = 0
-    with open('tagcounts.tsv', 'a') as f1, open('tagcounts_trialids.tsv', 'a') as f2:
-        for trial in totalTrials:
-            ct+=1
-            if (ct % 100 == 0):
-                print(ct, 'rows made of', count)
-            row = []
-            for h in headers:
-                if h in totalTrials[trial]:
-                    row.append(str(1))
-                else:
-                    row.append(str(0))
+    # TODO: intead of file make mongo rec {id:NCT001, data: xxx, data:"0 1 0 ..", or {tagkey1:0,tagkey2:1} }
+    # .. then mongo records read into a tagcounts.tsv at process_data time
+    # But tags change over time, new ones are added
+    # open a new tag table
+    tagdata = db_stocks['tagdata']
+    tagdata.remove({})
+    # write the headers as the first record to keep track of what the data means
+    tagdata.insert({'id':'headers', 'data': headers})
 
-            f1.write('\t'.join(row) + '\n')
-            f2.write(trial + '\n')
+    for trial in totalTrials:
+        ct+=1
+        if (ct % 100 == 0):
+            print(ct, 'rows made of', count)
+        row = []
+        for h in headers:
+            if h in totalTrials[trial]:
+                row.append(str(1))
+            else:
+                row.append(str(0))
+        rec = {
+            'id': trial,
+            'data': row
+        }
+        tagdata.insert(rec)
 
-    # write mgs and ids to file
-    open('mgs_to_trialid.tsv', 'w')
-    with open('mgs_to_trialid.tsv', 'a') as f:
-        for mg in mgs_to_trialid:
-            row = [mg] + mgs_to_trialid[mg]
-            f.write('\t'.join(row) + '\n')
-            # write trials to record
-            listed.update(
-                {"medicalgroups":mg},
-                {"$addToSet": {"trials": {"$each": mgs_to_trialid[mg]}}},
-                upsert=False,
-                multi=True
-            )
+    # write trials to record
+    for mg in mgs_to_trialid:
+        listed.update(
+            {"medicalgroups":mg},
+            {"$addToSet": {"trials": {"$each": mgs_to_trialid[mg]}}},
+            upsert=False,
+            multi=True
+        )
 
 
     print('ran tagcounts')
@@ -343,63 +343,60 @@ def mgcalculate():
     # write the trials to the listed stock
 
     db = MongoClient("mongodb://localhost:27017").stocks
-    data = np.genfromtxt("mgs_to_trialid.tsv", delimiter='\n', dtype=np.str)
+    licursor = db.listed.find({
+        "medicalgroups.0":{"$exists":True},
+        "trials.0":{"$exists":True},
+        "marketcap": {"$exists":True},
+        "marketcap": {"$gt":0}
+    })
 
-    for mg in data:
-        mg = mg.split('\t')
-        mgname = mg[0]
-        trials = mg[1:]
-        # find_one might not find the best one?
-        li = db.listed.find_one({"medicalgroups":mgname, "marketcap": {"$exists":True}, "marketcap": {"$gt":0}})
-        print(li)
-        if li:
-            if 'operatingincome' in li and li["operatingincome"] and li["operatingincome"] > 0 and li["pipelineAdjustedMarketCap"] > 0:
-                mc = li["pipelineAdjustedMarketCap"]
-            else:
-                mc = li["marketcap"]
-            marketcapPerTrial = int( mc / len(trials) )
-            print(mgname, li["marketcap"], marketcapPerTrial)
-            db.listed.update(
-                {"_id":li["_id"]},
-                {"$set":{"marketcapPerTrial":marketcapPerTrial}}
+    for li in licursor:
+        mgname = li['medicalgroups'][0] # first one??
+        trials = li['trials']
+        # use adjusted cap instead
+        if 'operatingincome' in li and li["operatingincome"] and li["operatingincome"] > 0 and li["pipelineAdjustedMarketCap"] > 0:
+            mc = li["pipelineAdjustedMarketCap"]
+        else:
+            mc = li["marketcap"]
+        marketcapPerTrial = int( mc / len(trials) )
+        print(mgname, li["marketcap"], marketcapPerTrial)
+        # now go through each of these trials and write the marketcap as the Y target
+        for trial in trials:
+            db['tagdata'].update(
+                {"id": trial},
+                {"$set":{
+                    "marketcapPerTrial": marketcapPerTrial,
+                    "medicalgroup": mgname
+                }},
+                upsert=False
             )
 
 
-        # list the ones with most valuable trials, there may be outliers here like ,
-        # healthcare companies with big cap and one trial ... i could find these like that too. big cap but few trials.
-
-
-def gettargets():
-    open('targets.tsv', 'w')
-    ids = np.genfromtxt("tagcounts_trialids.tsv", delimiter='\n', dtype=np.str)
-    # Y is the calculated per trial value
-    db_stocks = MongoClient("mongodb://localhost:27017").stocks
-    with open('targets.tsv', 'a') as f:
-        for id in ids:
-            li = db_stocks.listed.find_one({"trials":id, "marketcapPerTrial":{"$exists":True}})
-            f.write(str(li["marketcapPerTrial"]) + '\n')
-
 ########################################################
 
-# can i use actual backups to put on aws
-# can i connect to MM mongo to get cttag_a and medicalgroup
 def backup():
+    print('running backup')
     client = MongoClient('mongodb://localhost:27017')
     db_stocks = client.stocks
-    newcoll = db_stocks["listed-" + date.today().strftime('%m-%d-%Y')]
+    today = date.today().strftime('%m-%d-%Y')
+    newcoll = db_stocks["listed-" + today]
     newcoll.remove({})
     for doc in db_stocks['listed'].find({}):
         newcoll.insert(doc)
+    newcoll2 = db_stocks["tagdata-" + today]
+    newcoll2.remove({})
+    for doc in db_stocks['tagdata'].find({}):
+        newcoll2.insert(doc)
 
 ########################################################
 
 if __name__ == "__main__":
-    # getlisted()
-    # mgtagger()
-    # marketcap()
-    # tagcounts()
-    # mgcalculate()
-    gettargets()
+    getlisted()
+    mmdata()
+    mgtagger()
+    marketcap()
+    tagcounts()
+    mgcalculate()
     backup()
 
     # create a copy of the listeddb when this is ran? then process_data would

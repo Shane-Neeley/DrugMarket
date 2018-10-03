@@ -8,15 +8,25 @@ import matplotlib.pyplot as plt
 from pymongo import MongoClient
 
 def get_data(PCAtags = True):
-    ids = np.genfromtxt("tagcounts_trialids.tsv", delimiter='\n', dtype=np.str)
-    # easier to work with numpy array
-    X = np.genfromtxt("tagcounts.tsv", delimiter='\t', dtype=np.int32)
-    # Y is the calculated per trial value
-    Y = np.genfromtxt("targets.tsv", delimiter='\n', dtype=np.int32)
+    ids = []
+    # get X, Y as the total of all acquired dates
+    X = []
+    Y = []
+    db = MongoClient("mongodb://localhost:27017").stocks
+    for coll in db.collection_names():
+        if 'tagdata-' in coll:
+            for d in db[coll].find({"id":{"$ne":"headers"}}):
+                ids.append(d['id'])
+                X.append(d['data'])
+                Y.append(d['marketcapPerTrial'])
+
+    ids = np.array(ids, dtype=np.str)
+    X = np.array(X, dtype=np.int32)
+    Y = np.array(Y, dtype=np.int32)
 
     Ystd = Y.std()
     Ymean = Y.mean()
-    Y = ( (Y - Ymean) / Ystd + 1 ) # mean of 1, std of 1
+    Y = ( (Y - Ymean) / Ystd ) + 1
 
     print('X.shape before PCA')
     print(X.shape)

@@ -14,9 +14,9 @@ client = MongoClient("mongodb://localhost:27017")
 db = client.stocks
 
 
-X, Y, Ymean, Ystd, ids = get_data()
+X, Y, Ymean, Ystd, ids = get_data(PCAtags=True)
 X, Y, ids = shuffle(X, Y, ids) # shuffle but keep indexes together
-Ntrain = int(0.75 * len(X)) # give it all the data to train
+Ntrain = int(0.97 * len(X)) # give it all the data to train
 Xtrain, Ytrain = X[:Ntrain], Y[:Ntrain]
 Xtest, Ytest = X[Ntrain:], Y[Ntrain:]
 # idsTrain = ids[:Ntrain]
@@ -27,20 +27,14 @@ N, D = X.shape
 
 # the model will be a sequence of layers
 model = Sequential()
-#layer 1
-model.add(Dense(units=32, input_dim=D, activation = 'relu'))
-model.add(Dropout(0.5))
-#layer 2
-model.add(Dense(units=32, activation = 'relu'))
-#layer 3
-model.add(Dense(units=32, activation = 'relu'))
-model.add(Dropout(0.5))
-#layer 4
-model.add(Dense(units=32, activation = 'relu'))
-model.add(Dropout(0.5))
-# no activation on final layer for regression
+# input layer
+model.add(Dense(units=64, input_dim=D, activation = 'relu'))
+hidden_layers = 7
+for _ in range(hidden_layers):
+    model.add(Dense(units=64, activation = 'relu'))
+    model.add(Dropout(0.2))
+# no activation on output layer for regression
 model.add(Dense(1))
-
 
 # Compile model
 model.compile(
@@ -52,8 +46,8 @@ model.compile(
 r = model.fit(
     Xtrain,
     Ytrain,
-    epochs=200,
-    batch_size=500,
+    epochs=50,
+    batch_size=64,
     validation_data=(Xtest, Ytest)
 )
 
@@ -61,6 +55,7 @@ print('calculating/predicting ...')
 
 # predict from all trials
 ynew = model.predict(X)
+print(ynew)
 
 # build the pipeline values for each company
 mgs = np.genfromtxt("mgs_to_trialid.tsv", delimiter='\n', dtype=np.str)
@@ -74,7 +69,7 @@ for mg in mgs:
         for num, id in enumerate(ids):
             if (t == id):
                 Z = ynew[num][0]
-                mc = ( (Z - 1) * Ystd) + Ymean
+                mc = ((Z-1) * Ystd) + Ymean
                 mgPipeline[mgname] = mgPipeline[mgname] + int(mc)
 
 
@@ -89,7 +84,9 @@ for mg in mgPipeline:
 sorted_x = sorted(mgDiffs.items(), key=operator.itemgetter(1), reverse=False)
 tot = []
 for i in sorted_x:
-    tot.append([i[0], "{:,}".format(int(i[1])) + 'X'])
+    # tot.append([i[0], "{:,}".format(int(i[1])) + 'X'])
+    tot.append(i)
+
 df = pd.DataFrame(tot, columns=["Name", "Mult"])
 print(tabulate(df, headers='keys', tablefmt='psql'))
 
@@ -100,9 +97,29 @@ plt.title('model loss')
 plt.ylabel('loss')
 plt.xlabel('epoch')
 plt.legend(['train', 'test'], loc='upper left')
-plt.show()
-
+# plt.show()
 
 
 # save and load keras models
 # https://machinelearningmastery.com/save-load-keras-deep-learning-models/
+
+
+# hyperparam op: https://github.com/autonomio/talos
+# https://towardsdatascience.com/hyperparameter-optimization-with-keras-b82e6364ca53
+# example of model params for grid search
+# p = {
+#      'lr': (0.8, 1.2, 3),
+#      'first_neuron':[4, 8, 16, 32, 64],
+#      'hidden_layers':[0, 1, 2],
+#      'batch_size': (1, 5, 5),
+#      'epochs': [50, 100, 150],
+#      'dropout': (0, 0.2, 3),
+#      'weight_regulizer':[None],
+#      'emb_output_dims': [None],
+#      'shape':['brick','long_funnel'],
+#      'kernel_initializer': ['uniform','normal'],
+#      'optimizer': [Adam, Nadam, RMSprop],
+#      'losses': [binary_crossentropy],
+#      'activation':[relu, elu],
+#      'last_activation': [sigmoid]
+# }
