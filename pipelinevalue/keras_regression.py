@@ -6,16 +6,17 @@ from keras import metrics
 from process_data import get_data
 import matplotlib.pyplot as plt
 import json
-from pymongo import MongoClient
 from sklearn.utils import shuffle
 import operator
 from tabulate import tabulate
-client = MongoClient("mongodb://localhost:27017")
-db = client.stocks
 
+from pymongo import MongoClient
+db = MongoClient("mongodb://localhost:27017").stocks
 
-X, Y, Ymean, Ystd, ids = get_data(PCAtags=True)
-X, Y, ids = shuffle(X, Y, ids) # shuffle but keep indexes together
+###############################
+
+X, Y, Ymean, Ystd, ids_today, mgs_to_trialid, Xtoday = get_data(PCAtags=True)
+X, Y = shuffle(X, Y) # shuffle but keep indexes together
 Ntrain = int(0.97 * len(X)) # give it all the data to train
 Xtrain, Ytrain = X[:Ntrain], Y[:Ntrain]
 Xtest, Ytest = X[Ntrain:], Y[Ntrain:]
@@ -46,34 +47,30 @@ model.compile(
 r = model.fit(
     Xtrain,
     Ytrain,
-    epochs=50,
+    epochs=5,
     batch_size=64,
     validation_data=(Xtest, Ytest)
 )
 
+# predict from today's trials only
 print('calculating/predicting ...')
-
-# predict from all trials
-ynew = model.predict(X)
+ynew = model.predict(Xtoday)
 print(ynew)
 
-# build the pipeline values for each company
-mgs = np.genfromtxt("mgs_to_trialid.tsv", delimiter='\n', dtype=np.str)
+# build the pipeline values for each company based on Today's data only, not historical
 mgPipeline = {}
-for mg in mgs:
-    mg = mg.split('\t')
-    mgname = mg[0]
+for mgname in mgs_to_trialid:
     mgPipeline[mgname] = 0
-    trials = mg[1:]
+    trials = mgs_to_trialid[mgname]
     for t in trials:
-        for num, id in enumerate(ids):
+        for num, id in enumerate(ids_today):
             if (t == id):
                 Z = ynew[num][0]
                 mc = ((Z-1) * Ystd) + Ymean
                 mgPipeline[mgname] = mgPipeline[mgname] + int(mc)
 
 
-# calculate the percent diffs
+# calculate the percent diffs, using today's data in listed, not historical
 mgDiffs = {}
 for mg in mgPipeline:
     li = db.listed.find_one({"medicalgroups":mg})
@@ -84,7 +81,6 @@ for mg in mgPipeline:
 sorted_x = sorted(mgDiffs.items(), key=operator.itemgetter(1), reverse=False)
 tot = []
 for i in sorted_x:
-    # tot.append([i[0], "{:,}".format(int(i[1])) + 'X'])
     tot.append(i)
 
 df = pd.DataFrame(tot, columns=["Name", "Mult"])
@@ -97,13 +93,11 @@ plt.title('model loss')
 plt.ylabel('loss')
 plt.xlabel('epoch')
 plt.legend(['train', 'test'], loc='upper left')
-# plt.show()
+plt.show()
 
-
+# Notes
 # save and load keras models
 # https://machinelearningmastery.com/save-load-keras-deep-learning-models/
-
-
 # hyperparam op: https://github.com/autonomio/talos
 # https://towardsdatascience.com/hyperparameter-optimization-with-keras-b82e6364ca53
 # example of model params for grid search

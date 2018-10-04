@@ -204,11 +204,6 @@ def tagcounts():
     # get a unique list of medicalgroups to query trials for
     db_stocks = client.stocks
     listed = db_stocks['listed']
-    licursor = listed.find({
-        "medicalgroups.0":{"$exists": True},
-        "marketcap":{"$exists": True},
-        "marketcap":{"$gt": 0}
-    })
 
     # list the ones with most valuable trials, there may be outliers here like ,
     # healthcare companies with big cap and one trial ... i could find these like that too. big cap but few trials.
@@ -223,11 +218,17 @@ def tagcounts():
         "Stryker"
     ]
 
+    licursor = listed.find({
+        "medicalgroups.0":{"$exists": True},
+        "medicalgroups":{"$nin": avoid},
+        "marketcap":{"$exists": True},
+        "marketcap":{"$gt": 0}
+    })
+
     mgs = []
     for li in licursor:
         for mg in li['medicalgroups']:
-            if mg not in avoid:
-                mgs.append(mg)
+            mgs.append(mg)
     mgs = np.unique(mgs).tolist()
 
     # Any trials with a medicalgroup tag we want that are open
@@ -247,12 +248,6 @@ def tagcounts():
     }
     cttag_a = db_stocks.cttag_a.find(q)
     count = db_stocks.cttag_a.count(q)
-    # create a cttag_a_open_mg
-    cttag2 = db_stocks['cttag_open_mg']
-    cttag2.remove({})
-    for cttag in cttag_a:
-        cttag2.insert(cttag)
-    cttag_a.rewind()
 
     totalTrials = {}
     mgs_to_trialid = {}
@@ -286,7 +281,7 @@ def tagcounts():
 
     # apply mask for just the data I want for all historical data
     tags_I_Want = ["CONDITION", "PHASE", "DRUGCLASS"]
-    priority_I_Want = ['include1'] # include2 also
+    priority_I_Want = ['include1', 'include2'] # include2 also
     headers = []
     # for each trial tag
     for trial in totalTrials:
@@ -334,7 +329,8 @@ def tagcounts():
         rec = {
             'id': trial,
             'tags': totalTrials[trial],
-            'data': data
+            'data': data,
+            'lastupdated': today
         }
         tagdata.insert(rec, check_keys=False) #check_keys for '.' not all
 
@@ -345,21 +341,21 @@ def tagcounts():
             for trial in db_stocks[coll].find({}):
                 ct+=1
                 if ct % 1000 == 0:
-                    print(ct, 'trial ...', count, coll)
+                    print(ct, 'trial historical of', count, coll)
                 data = []
                 for h in headers:
                     if h in trial['tags']:
                         data.append(1)
                     else:
                         data.append(0)
-            # set the new data that is based on the new headers, but the old tags on the that trial
-            db_stocks[coll].update(
-                {'id': trial['id']},
-                {'$set':{
-                    'data': data,
-                    'lastupdated': today
-                }}
-            )
+                # set the new data that is based on the new headers, but the old tags on the that trial
+                db_stocks[coll].update(
+                    {'id': trial['id']},
+                    {'$set':{
+                        'data': data,
+                        'lastupdated': today
+                    }}
+                )
 
 
     print('ran tagcounts')
@@ -371,18 +367,20 @@ def mgcalculate():
     # write the trials to the listed stock
 
     db = MongoClient("mongodb://localhost:27017").stocks
-    licursor = db.listed.find({
+    q = {
         "medicalgroups.0":{"$exists":True},
         "trials.0":{"$exists":True},
         "marketcap": {"$exists":True},
         "marketcap": {"$gt":0}
-    })
+    }
+    licursor = db.listed.find(q)
+    count = db.listed.count(q)
 
     ct = 0
     for li in licursor:
         ct+=1
-        if ct % 1000 == 0:
-            print(ct, 'mgcalculate ...')
+        if ct % 100 == 0:
+            print(ct, 'mgcalculate ...', count)
 
         mgname = li['medicalgroups'][0] # first one??
         trials = li['trials']
@@ -393,7 +391,6 @@ def mgcalculate():
             mc = li["marketcap"]
         marketcapPerTrial = int( mc / len(trials) )
 
-        # print(mgname, li["marketcap"], marketcapPerTrial)
         # now go through each of these trials and write the marketcap as the Y target
         # for historical, keep the old Y
         for trial in trials:
@@ -401,9 +398,9 @@ def mgcalculate():
                 {"id": trial},
                 {"$set":{
                     "marketcapPerTrial": marketcapPerTrial,
-                    "medicalgroup": mgname
-                }},
-                upsert=False
+                    "medicalgroup": mgname,
+                    "lastupdated": today
+                }}
             )
 
 ########################################################
@@ -426,13 +423,13 @@ def backup():
 ########################################################
 
 if __name__ == "__main__":
-    # getlisted()
-    # mmdata()
-    # mgtagger()
-    # marketcap()
+    getlisted()
+    mmdata()
+    mgtagger()
+    marketcap()
     tagcounts()
-    # mgcalculate()
-    # backup()
+    mgcalculate()
+    backup()
 
     # create a copy of the listeddb when this is ran? then process_data would
     # gather dbs from all dates. i should write the tagcounts to db as well so we can just back it all up by date.

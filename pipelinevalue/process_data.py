@@ -6,50 +6,61 @@ import sklearn
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 from pymongo import MongoClient
+from datetime import date
 
-# TODO: really what i gotta do is back up each cttag w/ a date,
-# then perform the tag counting, because just because i didn't look for something
-# doesnt mean it wasnt there.
-
-def get_data(PCAtags = True):
-    ids = []
+def get_data(PCAtags = True, PCAvalue = 300):
     # get X, Y as the total of all acquired dates
     X = []
     Y = []
+    # put today's data in it's own arrays for prediction
+    today = date.today().strftime('%m-%d-%Y')
+    mgs_to_trialid = {}
+    Xtoday = []
+    ids_today = []
+
     db = MongoClient("mongodb://localhost:27017").stocks
     for coll in db.collection_names():
         if 'tagdata-' in coll:
             for d in db[coll].find({}):
-                ids.append(d['id'])
                 X.append(d['data'])
                 Y.append(d['marketcapPerTrial'])
+                # collect into today's as well (also train on today from above?)
+                if coll.split('tagdata-')[1] == today:
+                    Xtoday.append(d['data'])
+                    ids_today.append(d['id'])
+                    if d['medicalgroup'] not in mgs_to_trialid:
+                        mgs_to_trialid[d['medicalgroup']] = [d['id']]
+                    else:
+                        mgs_to_trialid[d['medicalgroup']].append(d['id'])
 
-    ids = np.array(ids, dtype=np.str)
+    # make'em numpy
+    ids_today = np.array(ids_today, dtype=np.str)
+    Xtoday = np.array(Xtoday, dtype=np.int32)
+
     X = np.array(X, dtype=np.int32)
     Y = np.array(Y, dtype=np.int32)
-
+    # normalize Y
     Ystd = Y.std()
     Ymean = Y.mean()
     Y = ( (Y - Ymean) / Ystd ) + 1
 
-    print('X.shape before PCA')
-    print(X.shape)
-
     if PCAtags:
+        print('X.shape before PCA')
+        print(X.shape)
         # columns 0,4 are phase
         Xtags = X[:,5:]
         Xphase = X[:,:4]
+        Xtodaytags = Xtoday[:,5:]
+        Xtodayphase = Xtoday[:,:4]
 
         # Too many tags, do dimensionality reduction just on the tags (column 4 and on ..)
         pca = PCA()
         reduced = pca.fit_transform(Xtags)
-        reduced = reduced[:, :300] # .. however much cutoff u want
-        # make new X
+        reduced = reduced[:, :PCAvalue] # .. however much cutoff u want
         X = np.concatenate((Xphase, reduced), 1)
         # plt.plot(pca.explained_variance_ratio_)
         # plt.title('explained_variance_ratio_')
         # plt.show()
-
         # cumulative variance
         # choose k = number of dimensions that gives us 95-99% variance
         cumulative = []
@@ -61,10 +72,16 @@ def get_data(PCAtags = True):
         # plt.title('cumulative')
         # plt.show()
 
+        pca = PCA()
+        reduced = pca.fit_transform(Xtodaytags)
+        reduced = reduced[:, :PCAvalue]
+        Xtoday = np.concatenate((Xtodayphase, reduced), 1)
+
     print('size X: ' + str(X.shape))
     print('size Y: ' + str(Y.shape))
+    print('size Xtoday: ' + str(Xtoday.shape))
 
-    return X, Y, Ymean, Ystd, ids
+    return X, Y, Ymean, Ystd, ids_today, mgs_to_trialid, Xtoday
 
 if __name__ == '__main__':
     get_data()
