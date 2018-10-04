@@ -207,7 +207,7 @@ def tagcounts():
     licursor = listed.find({
         "medicalgroups.0":{"$exists": True},
         "marketcap":{"$exists": True},
-        "marketcap":{"$gt": 0},
+        "marketcap":{"$gt": 0}
     })
 
     # list the ones with most valuable trials, there may be outliers here like ,
@@ -291,6 +291,7 @@ def tagcounts():
     # for each trial tag
     for trial in totalTrials:
         for tag in totalTrials[trial]:
+
             hasFacet = False
             hasPriority = False
             for f in tags_I_Want:
@@ -299,6 +300,7 @@ def tagcounts():
             for p in priority_I_Want:
                 if p in tag:
                     hasPriority = True
+
             # if i want this tag, record it's compkey in headers
             if hasFacet and hasPriority:
                 if tag not in headers:
