@@ -5,33 +5,45 @@ import os
 import sklearn
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
-from pymongo import MongoClient
+import datetime
 from datetime import date
+
+# TODO: still need a file based version of the data for cloud gpu
+from pymongo import MongoClient
+db = MongoClient("mongodb://localhost:27017").stocks
 
 def get_data(PCAtags = True, PCAvalue = 300):
     # get X, Y as the total of all acquired dates
     X = []
     Y = []
-    # put today's data in it's own arrays for prediction
-    today = date.today().strftime('%m-%d-%Y')
+
     mgs_to_trialid = {}
     Xtoday = []
     ids_today = []
 
-    db = MongoClient("mongodb://localhost:27017").stocks
+    # find latest date in database, use for prediction only
+    timestamps = []
+    for coll in db.collection_names():
+        if 'tagdata-' in coll:
+            timestamps.append(coll.split('tagdata-')[1])
+    dates = [datetime.datetime.strptime(ts, "%Y-%m-%d") for ts in timestamps]
+    dates.sort(reverse=True)
+    sorteddates = [datetime.datetime.strftime(ts, "%Y-%m-%d") for ts in dates]
+    latest = sorteddates[0]
     for coll in db.collection_names():
         if 'tagdata-' in coll:
             for d in db[coll].find({}):
-                X.append(d['data'])
-                Y.append(d['marketcapPerTrial'])
-                # collect into today's as well (also train on today from above?)
-                if coll.split('tagdata-')[1] == today:
+                if coll.split('tagdata-')[1] == latest:
                     Xtoday.append(d['data'])
                     ids_today.append(d['id'])
                     if d['medicalgroup'] not in mgs_to_trialid:
                         mgs_to_trialid[d['medicalgroup']] = [d['id']]
                     else:
                         mgs_to_trialid[d['medicalgroup']].append(d['id'])
+                else:
+                    X.append(d['data'])
+                    Y.append(d['marketcapPerTrial'])
+
 
     # make'em numpy
     ids_today = np.array(ids_today, dtype=np.str)
@@ -39,7 +51,7 @@ def get_data(PCAtags = True, PCAvalue = 300):
 
     X = np.array(X, dtype=np.int32)
     Y = np.array(Y, dtype=np.int32)
-    # normalize Y
+    # normalize Y, shift mean by one
     Ystd = Y.std()
     Ymean = Y.mean()
     Y = ( (Y - Ymean) / Ystd ) + 1

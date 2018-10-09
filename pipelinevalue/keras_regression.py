@@ -12,12 +12,13 @@ from tabulate import tabulate
 
 from pymongo import MongoClient
 db = MongoClient("mongodb://localhost:27017").stocks
+# TODO: still need a file based version of the data for cloud gpu
 
 ###############################
 
-X, Y, Ymean, Ystd, ids_today, mgs_to_trialid, Xtoday = get_data(PCAtags=True)
+X, Y, Ymean, Ystd, ids_today, mgs_to_trialid, Xtoday = get_data(PCAtags=True, PCAvalue=300)
 X, Y = shuffle(X, Y) # shuffle but keep indexes together
-Ntrain = int(0.97 * len(X)) # give it all the data to train
+Ntrain = int(0.90 * len(X)) # give it all the data to train
 Xtrain, Ytrain = X[:Ntrain], Y[:Ntrain]
 Xtest, Ytest = X[Ntrain:], Y[Ntrain:]
 # idsTrain = ids[:Ntrain]
@@ -29,10 +30,10 @@ N, D = X.shape
 # the model will be a sequence of layers
 model = Sequential()
 # input layer
-model.add(Dense(units=64, input_dim=D, activation = 'relu'))
+model.add(Dense(units=64, input_dim=D, activation='relu'))
 hidden_layers = 7
 for _ in range(hidden_layers):
-    model.add(Dense(units=64, activation = 'relu'))
+    model.add(Dense(units=64, activation='relu'))
     model.add(Dropout(0.2))
 # no activation on output layer for regression
 model.add(Dense(1))
@@ -41,14 +42,14 @@ model.add(Dense(1))
 model.compile(
     loss='mean_squared_error',
     optimizer='rmsprop',
-    # metrics=[metrics.mae]
+    metrics=[metrics.mae]
 )
 
 r = model.fit(
     Xtrain,
     Ytrain,
-    epochs=5,
-    batch_size=64,
+    epochs=100,
+    batch_size=128,
     validation_data=(Xtest, Ytest)
 )
 
@@ -66,7 +67,7 @@ for mgname in mgs_to_trialid:
         for num, id in enumerate(ids_today):
             if (t == id):
                 Z = ynew[num][0]
-                mc = ((Z-1) * Ystd) + Ymean
+                mc = ((Z-1) * Ystd) + Ymean # remember to unshift the mean
                 mgPipeline[mgname] = mgPipeline[mgname] + int(mc)
 
 

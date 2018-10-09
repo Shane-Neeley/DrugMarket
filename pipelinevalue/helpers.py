@@ -11,8 +11,8 @@ from datetime import date
 import os
 import subprocess
 
-# set a global today
-today = date.today().strftime('%m-%d-%Y')
+# set a global today, y-m-d so can sort
+today = date.today().strftime('%Y-%m-%d')
 
 ########################################################
 
@@ -67,21 +67,11 @@ def getlisted():
             "Limited American Depositary Shares each representing one hundred Ordinary Shares",
             " - Warrant",
             ' - ',
-            "Common Stock",
-            "(Antigua/Barbudo)",
-            "(Canada)",
-            "Common Shares",
-            "Holding Corporation",
-            "Holding Company",
-            "Holding Corp",
-            "(Holding Company)"
-            "Incorporated",
-            " Inc",
-            "Class A",
-            "Ordinary Shares",
-            "Depositary Shares",
-            "Depositary Shares",
-            " Ltd",
+            "Common Stock", "(Antigua/Barbudo)", "(Canada)", "Common Shares",
+            "Holding Corporation", "Holding Company", "Holding Corp", "(Holding Company)"
+            "Incorporated", " Inc", "Class A", " Corp", " Corporation",
+            " (Delaware)", " (DE)", " plc", " N.V.", " S.A.", " A/S", " NV",
+            " SA", "Ordinary Shares", "Depositary Shares", " Ltd", " Limited", " AG"
             ",",
             ".",
             "()"
@@ -95,6 +85,10 @@ def getlisted():
     listed.insert(records)
 
     print('ran listed')
+
+########################################################
+
+
 
 ########################################################
 
