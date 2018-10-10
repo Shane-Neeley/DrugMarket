@@ -2083,8 +2083,6 @@ GPMT|Granite Point Mortgage Trust Inc. Common Stock|N|GPMT|N|100|N|GPMT
 GPN|Global Payments Inc. Common Stock|N|GPN|N|100|N|GPN
 GPRK|Geopark Ltd Common Shares|N|GPRK|N|100|N|GPRK
 GPS|Gap, Inc. (The) Common Stock|N|GPS|N|100|N|GPS
-GPT|Gramercy Property Trust|N|GPT|N|100|N|GPT
-GPT$A|Gramercy Property Trust Inc. 7.125% Series A Cumulative Redeemable Preferred Share|N|GPTpA|N|100|N|GPT-A
 GPX|GP Strategies Corporation Common Stock|N|GPX|N|100|N|GPX
 GQRE|FlexShares Global Quality Real Estate Index Fund|P|GQRE|Y|100|N|GQRE
 GRA|W.R. Grace & Co. Common Stock|N|GRA|N|100|N|GRA
@@ -3246,6 +3244,7 @@ MUNI|PIMCO Intermediate Municipal Bond Active Exchange-Traded Fund|P|MUNI|Y|100|
 MUR|Murphy Oil Corporation Common Stock|N|MUR|N|100|N|MUR
 MUS|Blackrock MuniHoldings Quality Fund, Inc Common Stock|N|MUS|N|100|N|MUS
 MUSA|Murphy USA Inc. Common Stock|N|MUSA|N|100|N|MUSA
+MUST|Columbia Multi-Sector Municipal Income ETF|P|MUST|Y|100|N|MUST
 MUX|McEwen Mining Inc. Common Stock|N|MUX|N|100|N|MUX
 MVC|MVC Capital, Inc. Common Stock|N|MVC|N|100|N|MVC
 MVCD|MVC Capital, Inc. 6.25% Senior Notes due 2022|N|MVCD|N|100|N|MVCD
@@ -4988,10 +4987,6 @@ VLRS|Controladora Vuela Compania de Aviacion, S.A.B. de C.V. American Depositary
 VLT|Invesco High Income Trust II|N|VLT|N|100|N|VLT
 VLU|SPDR S&P 1500 Value Tilt ETF|P|VLU|Y|100|N|VLU
 VLUE|iShares Edge MSCI USA Value Factor ETF|Z|VLUE|Y|100|N|VLUE
-VLY|Valley National Bancorp Common Stock|N|VLY|N|100|N|VLY
-VLY$A|Valley National Bancorp 6.25% Fixed-to-Floating Rate Non-Cumulative Perpetual Preferred Stock, Series A|N|VLYpA|N|100|N|VLY-A
-VLY$B|Valley National Bancorp 5.50% Fixed-to-Floating Rate Non-Cumulative Perpetual Preferred Stock, Series B|N|VLYpB|N|100|N|VLY-B
-VLY.W|Valley National Bancorp Warrants|N|VLY.WS|N|100|N|VLY+
 VMC|Vulcan Materials Company (Holding Company) Common Stock|N|VMC|N|100|N|VMC
 VMI|Valmont Industries, Inc. Common Stock|N|VMI|N|100|N|VMI
 VMIN|REX VolMAXX Short VIX Futures Strategy ETF|Z|VMIN|Y|100|N|VMIN
@@ -5145,7 +5140,6 @@ WMB|Williams Companies, Inc. (The) Common Stock|N|WMB|N|100|N|WMB
 WMC|Western Asset Mortgage Capital Corporation Common Stock|N|WMC|N|100|N|WMC
 WMCR|Invesco Wilshire Micro-Cap ETF|P|WMCR|Y|100|N|WMCR
 WMK|Weis Markets, Inc. Common Stock|N|WMK|N|100|N|WMK
-WMLP|Westmoreland Resource Partners, LP Common Units representing Limited Partner Interests|N|WMLP|N|100|N|WMLP
 WMS|Advanced Drainage Systems, Inc. Common Stock|N|WMS|N|100|N|WMS
 WMT|Walmart Inc. Common Stock|N|WMT|N|100|N|WMT
 WMW|DEUTSCHE BANK AKTIENGESELLSCHAFT ELEMENTS Linked to the Morningstar Wide Moat Focus Total Return Index due October 24, 2022|P|WMW|N|100|N|WMW
@@ -5311,4 +5305,4 @@ ZUO|Zuora, Inc. Class A Common Stock|N|ZUO|N|100|N|ZUO
 ZVV|NYSE ARCA test stock|P|ZVV|N|100|Y|ZVV
 ZXIET|IEX Test Company Test Symbol Three for IEX|V|ZXIET|N|100|Y|ZXIET
 ZYME|Zymeworks Inc. Common Shares|N|ZYME|N|100|N|ZYME
-File Creation Time: 1009201821:31||||||
+File Creation Time: 1010201817:01||||||

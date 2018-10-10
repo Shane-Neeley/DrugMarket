@@ -1747,7 +1747,6 @@ KIRK|Kirkland's, Inc. - Common Stock|Q|N|N|100|N|N
 KLAC|KLA-Tencor Corporation - Common Stock|Q|N|N|100|N|N
 KLIC|Kulicke and Soffa Industries, Inc. - Common Stock|Q|N|N|100|N|N
 KLXE|KLX Energy Services Holdings, Inc.  - Common Stock|Q|N|N|100|N|N
-KLXI|KLX Inc. - Common Stock|Q|N|N|100|N|N
 KMDA|Kamada Ltd. - Ordinary Shares|Q|N|N|100|N|N
 KMPH|KemPharm, Inc. - Common Stock|G|N|N|100|N|N
 KNDI|Kandi Technologies Group, Inc. - Common Stock|Q|N|N|100|N|N
@@ -2097,7 +2096,7 @@ NCMI|National CineMedia, Inc. - Common Stock|Q|N|N|100|N|N
 NCNA|NuCana plc - American Depositary Share|Q|N|N|100|N|N
 NCOM|National Commerce Corporation - Common Stock|Q|N|N|100|N|N
 NCSM|NCS Multistage Holdings, Inc. - Common Stock|Q|N|N|100|N|N
-NCTY|The9 Limited - American Depository Shares representing three ordinary shares|Q|N|D|100|N|N
+NCTY|The9 Limited - American Depository Shares representing three ordinary shares|S|N|D|100|N|N
 NDAQ|Nasdaq, Inc. - Common Stock|Q|N|N|100|N|N
 NDLS|Noodles & Company - Common Stock|Q|N|N|100|N|N
 NDRA|ENDRA Life Sciences Inc. - Common Stock|S|N|D|100|N|N
@@ -2945,7 +2944,6 @@ SYNA|Synaptics Incorporated - Common Stock|Q|N|N|100|N|N
 SYNC|Synacor, Inc. - Common Stock|G|N|N|100|N|N
 SYNH|Syneos Health, Inc. - Class A Common Stock|Q|N|N|100|N|N
 SYNL|Synalloy Corporation - Common Stock|G|N|N|100|N|N
-SYNT|Syntel, Inc. - Common Stock|Q|N|N|100|N|N
 SYPR|Sypris Solutions, Inc. - Common Stock|G|N|N|100|N|N
 SYRS|Syros Pharmaceuticals, Inc. - common stock|Q|N|N|100|N|N
 TA|TravelCenters of America LLC - Common Stock|Q|N|N|100|N|N
@@ -3040,6 +3038,7 @@ TOTAU|Tottenham Acquisition I Limited - Unit|S|N|N|100|N|N
 TOTAW|Tottenham Acquisition I Limited - Warrant|S|N|N|100|N|N
 TOUR|Tuniu Corporation - American Depositary Shares|G|N|N|100|N|N
 TOWN|Towne Bank - Common Stock|Q|N|N|100|N|N
+TPCO|Tribune Publishing Company - Common Stock|G|N|N|100|N|N
 TPIC|TPI Composites, Inc. - Common Stock|G|N|N|100|N|N
 TPIV|TapImmune Inc. - Common Stock|S|N|N|100|N|N
 TPNL|3PEA International, Inc. - Common Stock|S|N|N|100|N|N
@@ -3055,7 +3054,6 @@ TRMB|Trimble Inc. - Common Stock|Q|N|N|100|N|N
 TRMD|TORM plc - Class A Common Stock|Q|N|N|100|N|N
 TRMK|Trustmark Corporation - Common Stock|Q|N|N|100|N|N
 TRMT|Tremont Mortgage Trust - Common Shares of Beneficial Interest|S|N|N|100|N|N
-TRNC|tronc, Inc. - Common Stock|G|N|N|100|N|N
 TRNS|Transcat, Inc. - Common Stock|G|N|N|100|N|N
 TROV|TrovaGene, Inc. - Common Stock|S|N|D|100|N|N
 TROW|T. Rowe Price Group, Inc. - Common Stock|Q|N|N|100|N|N
@@ -3213,6 +3211,10 @@ VKTX|Viking Therapeutics, Inc. - Common Stock|S|N|N|100|N|N
 VKTXW|Viking Therapeutics, Inc. - Warrants|S|N|N|100|N|N
 VLGEA|Village Super Market, Inc. - Class A Common Stock|Q|N|N|100|N|N
 VLRX|Valeritas Holdings, Inc. - Common Stock|S|N|N|100|N|N
+VLY|Valley National Bancorp - Common Stock|Q|N|N|100|N|N
+VLYPO|Valley National Bancorp - 5.5% Fixed to Floating Rate Series B Non-Cumulative Perpetual Preferred Stock|Q|N|N|100|N|N
+VLYPP|Valley National Bancorp - 6.25% Fixed-to-Floating Rate Series A Non-Cumulative Perpetual Preferred Stock|Q|N|N|100|N|N
+VLYWW|Valley National Bancorp - Warrants |Q|N|N|100|N|N
 VMBS|Vanguard Mortgage-Backed Securities ETF|G|N|N|100|Y|N
 VNDA|Vanda Pharmaceuticals Inc. - Common Stock|G|N|N|100|N|N
 VNET|21Vianet Group, Inc. - American Depositary Shares|Q|N|N|100|N|N
@@ -3403,4 +3405,4 @@ ZWZZT|NASDAQ TEST STOCK|S|Y|N|100||N
 ZXYZ.A|Nasdaq Symbology Test Common Stock|Q|Y|N|100||N
 ZXZZT|NASDAQ TEST STOCK|G|Y|N|100||N
 ZYNE|Zynerba Pharmaceuticals, Inc. - Common Stock|G|N|N|100|N|N
-File Creation Time: 1009201821:31|||||||
+File Creation Time: 1010201817:01|||||||

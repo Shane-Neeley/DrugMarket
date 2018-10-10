@@ -69,7 +69,7 @@ def getlisted():
             ' - ',
             "Common Stock", "(Antigua/Barbudo)", "(Canada)", "Common Shares",
             "Holding Corporation", "Holding Company", "Holding Corp", "(Holding Company)"
-            "Incorporated", " Inc", "Class A", " Corp", " Corporation",
+            "Incorporated", " Inc", "Class A", " Corporation", " Corp",
             " (Delaware)", " (DE)", " plc", " N.V.", " S.A.", " A/S", " NV",
             " SA", "Ordinary Shares", "Depositary Shares", " Ltd", " Limited", " AG"
             ",",
@@ -85,9 +85,6 @@ def getlisted():
     listed.insert(records)
 
     print('ran listed')
-
-########################################################
-
 
 
 ########################################################
@@ -188,6 +185,7 @@ def marketcap():
 
     print('ran marketcap')
 
+
 ########################################################
 
 def tagcounts():
@@ -209,7 +207,24 @@ def tagcounts():
         "McKesson",
         "Quest Diagnostics Incorporated",
         "Thermo Fisher",
-        "Stryker"
+        "Stryker",
+        "Becton, Dickinson and Company",
+        "Intuitive Surgical",
+        "Illumina, Inc.",
+        "Agilent Technologies, Inc.",
+        "3M Company",
+        "ABIOMED, Inc.",
+        "Edwards Life Sciences",
+        "Smith & Nephew",
+        "Haemonetics Corporation",
+        "Masimo Corporation",
+        "Catalent",
+        "Cardinal Health",
+        "Fresenius Medical Care",
+        "Perrigo Company",
+        "Laboratory Corporation of America",
+        "ResMed, Inc.",
+        "Medtronic"
     ]
 
     licursor = listed.find({
@@ -264,7 +279,7 @@ def tagcounts():
                     else:
                         mgs_to_trialid[tag["term"]].append(cttag['id'])
 
-    # write trials to listed record
+    # write trials to listed record(s)
     for mg in mgs_to_trialid:
         listed.update(
             {"medicalgroups":mg},
@@ -356,27 +371,50 @@ def tagcounts():
 
 ########################################################
 
+
+def run_overrides():
+    print('running ticker overrides')
+    db = MongoClient("mongodb://localhost:27017").stocks
+    # preferredtickers = np.genfromtxt('../resources/bpc_tickers.txt', dtype=np.str)
+    # Some are duplicates or incorrect taggings like J & J Snack Foods Corp.
+    badtickers = ["GCVRZ", "NOVT", "ICON", "VTNR", "JJSF", "CYCCP"]
+    for tick in badtickers:
+        licursor = db.listed.update(
+            {"_symbol": tick},
+            {"$set": {"suppress": True}}
+        )
+
+########################################################
+
 def mgcalculate():
     print('running mg financials calculate')
-    # write the trials to the listed stock
 
     db = MongoClient("mongodb://localhost:27017").stocks
     q = {
         "medicalgroups.0":{"$exists":True},
         "trials.0":{"$exists":True},
         "marketcap": {"$exists":True},
-        "marketcap": {"$gt":0}
+        "marketcap": {"$gt":0},
+        "suppress": {"$ne":True}
     }
     licursor = db.listed.find(q)
     count = db.listed.count(q)
 
     ct = 0
+    beenseen = []
     for li in licursor:
+
         ct+=1
         if ct % 100 == 0:
             print(ct, 'mgcalculate ...', count)
 
         mgname = li['medicalgroups'][0] # first one??
+
+        # check if duplicates coming through
+        if mgname in beenseen:
+            print('this one has duplicate: ', mgname, li['_symbol'], li['_name'] )
+        beenseen = beenseen + li['medicalgroups']
+
         trials = li['trials']
         # use adjusted cap instead
         if 'operatingincome' in li and li["operatingincome"] and li["operatingincome"] > 0 and li["pipelineAdjustedMarketCap"] > 0:
@@ -384,6 +422,14 @@ def mgcalculate():
         else:
             mc = li["marketcap"]
         marketcapPerTrial = int( mc / len(trials) )
+
+        # set on listed
+        db['listed'].update(
+            {"_id": li["_id"]},
+            {"$set":{
+                "marketcapPerTrial": marketcapPerTrial
+            }}
+        )
 
         # now go through each of these trials and write the marketcap as the Y target
         # for historical, keep the old Y
@@ -396,6 +442,7 @@ def mgcalculate():
                     "lastupdated": today
                 }}
             )
+
 
 ########################################################
 
@@ -422,6 +469,7 @@ if __name__ == "__main__":
     mgtagger()
     marketcap()
     tagcounts()
+    run_overrides()
     mgcalculate()
     backup()
 
