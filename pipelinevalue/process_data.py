@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 import datetime
 from datetime import date
 
-# TODO: still need a file based version of the data for cloud gpu
 from pymongo import MongoClient
 db = MongoClient("mongodb://localhost:27017").stocks
 

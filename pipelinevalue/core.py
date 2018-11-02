@@ -52,7 +52,7 @@ N, D = X.shape
 model = Sequential()
 # input layer
 model.add(Dense(units=64, input_dim=D, activation='relu'))
-hidden_layers = 10
+hidden_layers = 8
 for _ in range(hidden_layers):
     model.add(Dense(units=64, activation='relu'))
     model.add(Dropout(0.2))

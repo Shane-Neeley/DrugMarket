@@ -91,8 +91,8 @@ def getlisted():
 
 # Get latest data
 def mmdata():
-    desktop = os.path.join(os.path.join(os.path.expanduser('~')), 'Desktop')
-    bashCommand = "sh " + desktop + "/dump-restore.sh"
+    folder = os.path.join(os.path.join(os.path.expanduser('~')), 'DrugMarket')
+    bashCommand = "sh " + folder + "/dump-restore.sh"
     process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
     output, error = process.communicate()
 
@@ -198,7 +198,7 @@ def tagcounts():
     listed = db_stocks['listed']
 
     # list the ones with most valuable trials, there may be outliers here like ,
-    # healthcare companies with big cap and one trial ... i could find these like that too. big cap but few trials.
+    # healthcare companies with big cap and one trial ...
     avoid = [
         "National Institutes of Health",
         "National Cancer Institute",
@@ -290,7 +290,7 @@ def tagcounts():
 
     # apply mask for just the data I want for all historical data
     tags_I_Want = ["CONDITION", "PHASE", "DRUGCLASS"]
-    priority_I_Want = ['include1', 'include2'] # include2 also
+    priority_I_Want = ['include1', 'include2', 'include3']
     headers = []
     # for each trial tag
     for trial in totalTrials:
