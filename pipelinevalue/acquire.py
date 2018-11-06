@@ -199,6 +199,8 @@ def tagcounts():
 
     # list the ones with most valuable trials, there may be outliers here like ,
     # healthcare companies with big cap and one trial ...
+    # the goal is to avoid everyone not directly incentivized by novel development of treatments
+    # with the way trials are tagging, some collaborator CROs may be listed, which we dont care about
     avoid = [
         "National Institutes of Health",
         "National Cancer Institute",
@@ -225,6 +227,10 @@ def tagcounts():
         "Laboratory Corporation of America",
         "ResMed, Inc.",
         "Medtronic"
+        "Varian Medical Systems",
+        "Repligen Corporation",
+        "Opko Health",
+        "Charles River Laboratories"
     ]
 
     licursor = listed.find({
@@ -244,6 +250,7 @@ def tagcounts():
     q = {"$and": [
             {"tags.term": {"$in":mgs}},
             {"tags.facet": "PHASE"},
+            {"tags.facet": "STATUS"},
             {"tags.term": {"$ne":"Temporarily not available"}},
             {"tags.term": {"$ne":"Suspended"}},
             {"tags.term": {"$ne":"Closed"}},

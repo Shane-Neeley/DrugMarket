@@ -37,7 +37,7 @@ db = MongoClient("mongodb://localhost:27017").stocks
 
 ###############################
 
-X, Y, Ymean, Ystd, ids_today, mgs_to_trialid, Xtoday = get_data(PCAtags=True, PCAvalue=100)
+X, Y, Ymean, Ystd, ids_today, mgs_to_trialid, Xtoday = get_data(PCAtags=False, PCAvalue=100)
 X, Y = shuffle(X, Y) # shuffle but keep indexes together
 Ntrain = int(0.80 * len(X)) # give it all the data to train
 Xtrain, Ytrain = X[:Ntrain], Y[:Ntrain]
@@ -69,7 +69,7 @@ model.compile(
 r = model.fit(
     Xtrain,
     Ytrain,
-    epochs=100,
+    epochs=1000,
     batch_size=128,
     validation_data=(Xtest, Ytest)
 )
