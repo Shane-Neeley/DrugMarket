@@ -23,7 +23,10 @@ import numpy as np
 import pandas as pd
 from keras.models import Sequential
 from keras.layers import Dense, Activation, Dropout
+from keras.layers import Input, GlobalMaxPooling1D, GlobalAveragePooling1D
+from keras.layers import Conv1D, MaxPooling1D
 from keras import metrics
+from keras import optimizers
 from process_data import get_data
 import matplotlib.pyplot as plt
 import json
@@ -37,47 +40,63 @@ db = MongoClient("mongodb://localhost:27017").stocks
 
 ###############################
 
-X, Y, Ymean, Ystd, ids_today, mgs_to_trialid, Xtoday = get_data(PCAtags=False, PCAvalue=100)
+# configuration / hyperparameters
+TRAINING_SPLIT = 0.80 # raise to 1 when final model train on all data
+BATCH_SIZE = 128
+EPOCHS = 400
+LEARNING_RATE = 0.0001
+OPTIMIZER = optimizers.RMSprop(lr=LEARNING_RATE, rho=0.9, epsilon=None, decay=0.0)
+HIDDEN_LAYERS = 8
+HIDDEN_UNITS = 64
+DROPOUT = 0.5
+ACTIVATION = 'relu'
+LOSS_FUNCTION = 'mean_squared_error'
+
+# Principle components analysis of tag data if True
+PCAtags=False
+PCAvalue = 100
+
+# get the data
+X, Y, Ymean, Ystd, ids_today, mgs_to_trialid, Xtoday = get_data(PCAtags=PCAtags, PCAvalue=PCAvalue)
 X, Y = shuffle(X, Y) # shuffle but keep indexes together
-Ntrain = int(0.80 * len(X)) # give it all the data to train
+Ntrain = int(TRAINING_SPLIT * len(X)) # give it all the data to train
 Xtrain, Ytrain = X[:Ntrain], Y[:Ntrain]
 Xtest, Ytest = X[Ntrain:], Y[Ntrain:]
-# idsTrain = ids[:Ntrain]
-# idsTest = ids[Ntrain:]
 
 # get shapes
 N, D = X.shape
+print('X.shape N,D:', X.shape)
 
 # the model will be a sequence of layers
 model = Sequential()
 # input layer
-model.add(Dense(units=64, input_dim=D, activation='relu'))
-hidden_layers = 8
-for _ in range(hidden_layers):
-    model.add(Dense(units=64, activation='relu'))
-    model.add(Dropout(0.2))
+model.add(Dense(units=HIDDEN_UNITS, input_dim=D, activation=ACTIVATION))
+for _ in range(HIDDEN_LAYERS):
+    model.add(Dense(units=HIDDEN_UNITS, activation=ACTIVATION))
+model.add(Dropout(DROPOUT))
 # no activation on output layer for regression
 model.add(Dense(1))
 
+print(model.summary())
+
 # Compile model
 model.compile(
-    loss='mean_squared_error',
-    optimizer='rmsprop',
+    loss=LOSS_FUNCTION,
+    optimizer=OPTIMIZER,
     metrics=[metrics.mae]
 )
 
 r = model.fit(
     Xtrain,
     Ytrain,
-    epochs=1000,
-    batch_size=128,
+    epochs=EPOCHS,
+    batch_size=BATCH_SIZE,
     validation_data=(Xtest, Ytest)
 )
 
 # predict from today's trials only
-print('calculating/predicting ...')
+print('calculating/predicting for today ...')
 ynew = model.predict(Xtoday)
-print(ynew)
 
 # build the pipeline values for each company based on Today's data only, not historical
 mgPipeline = {}
@@ -114,12 +133,14 @@ changeabsolute2 = ((r.history['mean_absolute_error'][0] - r.history['mean_absolu
 print('absolute error difference from start (validation): ', "%.2f" % changeabsolute, '%')
 print('absolute error difference from start (train): ', "%.2f" % changeabsolute2, '%')
 
+# print(r.history.keys())
 plt.plot(r.history['loss'])
 plt.plot(r.history['val_loss'])
-plt.title('model loss')
-plt.ylabel('loss')
+plt.plot(r.history['mean_absolute_error'])
+plt.plot(r.history['val_mean_absolute_error'])
+plt.title('model loss/accuracy (absolute error)')
 plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
+plt.legend(['train loss', 'test loss', 'train err', 'test err'], loc='upper left')
 plt.show()
 
 # Notes
@@ -127,22 +148,5 @@ plt.show()
 # https://machinelearningmastery.com/save-load-keras-deep-learning-models/
 # hyperparam op: https://github.com/autonomio/talos
 # https://towardsdatascience.com/hyperparameter-optimization-with-keras-b82e6364ca53
-# example of model params for grid search
-# p = {
-#      'lr': (0.8, 1.2, 3),
-#      'first_neuron':[4, 8, 16, 32, 64],
-#      'hidden_layers':[0, 1, 2],
-#      'batch_size': (1, 5, 5),
-#      'epochs': [50, 100, 150],
-#      'dropout': (0, 0.2, 3),
-#      'weight_regulizer':[None],
-#      'emb_output_dims': [None],
-#      'shape':['brick','long_funnel'],
-#      'kernel_initializer': ['uniform','normal'],
-#      'optimizer': [Adam, Nadam, RMSprop],
-#      'losses': [binary_crossentropy],
-#      'activation':[relu, elu],
-#      'last_activation': [sigmoid]
-# }
 # Collection of keras model examples
 # https://gist.github.com/candlewill/552fa102352ccce42fd829ae26277d24

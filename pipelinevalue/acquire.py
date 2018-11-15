@@ -84,7 +84,7 @@ def getlisted():
 
     listed.insert(records)
 
-    print('ran listed')
+    print('ran getlisted')
 
 
 ########################################################
@@ -384,7 +384,7 @@ def run_overrides():
     db = MongoClient("mongodb://localhost:27017").stocks
     # preferredtickers = np.genfromtxt('../resources/bpc_tickers.txt', dtype=np.str)
     # Some are duplicates or incorrect taggings like J & J Snack Foods Corp.
-    badtickers = ["GCVRZ", "NOVT", "ICON", "VTNR", "JJSF", "CYCCP"]
+    badtickers = ["GCVRZ", "NOVT", "ICON", "VTNR", "JJSF", "CYCCP", "EMES"]
     for tick in badtickers:
         licursor = db.listed.update(
             {"_symbol": tick},
@@ -419,7 +419,7 @@ def mgcalculate():
 
         # check if duplicates coming through
         if mgname in beenseen:
-            print('this one has duplicate: ', mgname, li['_symbol'], li['_name'] )
+            print('this one has duplicate: ', mgname, li['_symbol'], '---', li['_name'] )
         beenseen = beenseen + li['medicalgroups']
 
         trials = li['trials']
