@@ -47,7 +47,7 @@ EPOCHS = 400
 LEARNING_RATE = 0.0001
 OPTIMIZER = optimizers.RMSprop(lr=LEARNING_RATE, rho=0.9, epsilon=None, decay=0.0)
 HIDDEN_LAYERS = 8
-HIDDEN_UNITS = 64
+HIDDEN_UNITS = 128
 DROPOUT = 0.5
 ACTIVATION = 'relu'
 LOSS_FUNCTION = 'mean_squared_error'
@@ -76,6 +76,7 @@ for _ in range(HIDDEN_LAYERS):
 model.add(Dropout(DROPOUT))
 # no activation on output layer for regression
 model.add(Dense(1))
+# TODO: eventually I'd like to treat data as timepoints and do a CNN or LSTM
 
 print(model.summary())
 
