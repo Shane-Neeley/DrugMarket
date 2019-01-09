@@ -43,17 +43,17 @@ db = MongoClient("mongodb://localhost:27017").stocks
 # configuration / hyperparameters
 TRAINING_SPLIT = 0.80 # raise to 1 when final model train on all data
 BATCH_SIZE = 128
-EPOCHS = 400
+EPOCHS = 300
 LEARNING_RATE = 0.0001
 OPTIMIZER = optimizers.RMSprop(lr=LEARNING_RATE, rho=0.9, epsilon=None, decay=0.0)
-HIDDEN_LAYERS = 8
+HIDDEN_LAYERS = 6
 HIDDEN_UNITS = 128
 DROPOUT = 0.5
 ACTIVATION = 'relu'
 LOSS_FUNCTION = 'mean_squared_error'
 
 # Principle components analysis of tag data if True
-PCAtags=False
+PCAtags = False
 PCAvalue = 100
 
 # get the data
@@ -71,14 +71,12 @@ print('X.shape N,D:', X.shape)
 model = Sequential()
 # input layer
 model.add(Dense(units=HIDDEN_UNITS, input_dim=D, activation=ACTIVATION))
-for _ in range(HIDDEN_LAYERS):
+# hidden layers
+for layernumber in range(HIDDEN_LAYERS):
     model.add(Dense(units=HIDDEN_UNITS, activation=ACTIVATION))
 model.add(Dropout(DROPOUT))
-# no activation on output layer for regression
+# output layer - no activation on output layer for regression
 model.add(Dense(1))
-# TODO: eventually I'd like to treat data as timepoints and do a CNN or LSTM
-
-print(model.summary())
 
 # Compile model
 model.compile(

@@ -146,15 +146,17 @@ def marketcap():
         # download the market cap and save to the stock
         url = "https://api.iextrading.com/1.0/stock/" + li['_symbol'] + "/quote"
         with requests.Session() as s:
-            download = s.get(url)
-            content = json.loads(download.content.decode('utf-8'))
-            db.listed.update(
-                {'_id': li['_id']},
-                {'$set': {
-                    "marketcap": content['marketCap']
+            try:
+                content = s.get(url).json()
+                db.listed.update(
+                    {'_id': li['_id']},
+                    {'$set': {
+                        "marketcap": content['marketCap']
+                        }
                     }
-                }
-            )
+                )
+            except:
+                pass
 
         # Annual financials .. operatingIncome = totalRevenue - operatingExpense
         # For companies with big ol revenue, subract 5x revenue from marketcap to get pipeline value?
@@ -162,25 +164,27 @@ def marketcap():
         valuationMultiplier = 5
         url2 = "https://api.iextrading.com/1.0/stock/" + li['_symbol'] + "/financials?period=annual"
         with requests.Session() as s:
-            download2 = s.get(url2)
-            content2 = json.loads(download2.content.decode('utf-8'))
-            if "financials" in content2:
-                lastupdatedfinacials = content2["financials"][0] #last reported date
-                income = lastupdatedfinacials['operatingIncome']
-                db.listed.update(
-                    {'_id': li['_id']},
-                    {'$set': {
-                        "operatingincome": income
-                        }
-                    }
-                )
-
-                if income and income > 0:
-                    adjustedMarketCap = content["marketCap"] - (valuationMultiplier * income)
+            try:
+                content2 = s.get(url2).json()
+                if "financials" in content2:
+                    lastupdatedfinacials = content2["financials"][0] #last reported date
+                    income = lastupdatedfinacials['operatingIncome']
                     db.listed.update(
                         {'_id': li['_id']},
-                        {'$set': {"pipelineAdjustedMarketCap": adjustedMarketCap}}
+                        {'$set': {
+                            "operatingincome": income
+                            }
+                        }
                     )
+
+                    if income and income > 0:
+                        adjustedMarketCap = content["marketCap"] - (valuationMultiplier * income)
+                        db.listed.update(
+                            {'_id': li['_id']},
+                            {'$set': {"pipelineAdjustedMarketCap": adjustedMarketCap}}
+                        )
+            except:
+                pass
 
 
     print('ran marketcap')
@@ -471,9 +475,9 @@ def backup():
 ########################################################
 
 if __name__ == "__main__":
-    getlisted()
-    mmdata()
-    mgtagger()
+    # getlisted()
+    # mmdata()
+    # mgtagger()
     marketcap()
     tagcounts()
     run_overrides()
@@ -482,6 +486,6 @@ if __name__ == "__main__":
 
     # create a copy of the listeddb when this is ran? then process_data would
     # gather dbs from all dates. i should write the tagcounts to db as well so we can just back it all up by date.
-
+    # note, also do a ''./mongodump --db stocks' periodically and upload to personal google drive
 
 ########################################################
