@@ -475,9 +475,9 @@ def backup():
 ########################################################
 
 if __name__ == "__main__":
-    # getlisted()
-    # mmdata()
-    # mgtagger()
+    getlisted()
+    mmdata()
+    mgtagger()
     marketcap()
     tagcounts()
     run_overrides()

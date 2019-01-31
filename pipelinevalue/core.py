@@ -41,7 +41,7 @@ db = MongoClient("mongodb://localhost:27017").stocks
 ###############################
 
 # configuration / hyperparameters
-TRAINING_SPLIT = 0.80 # raise to 1 when final model train on all data
+TRAINING_SPLIT = 0.95 # raise to 1 when final model train on all data
 BATCH_SIZE = 128
 EPOCHS = 300
 LEARNING_RATE = 0.0001
