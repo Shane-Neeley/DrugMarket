@@ -84,6 +84,7 @@ model.compile(
     optimizer=OPTIMIZER,
     metrics=[metrics.mae]
 )
+model.summary()
 
 r = model.fit(
     Xtrain,
