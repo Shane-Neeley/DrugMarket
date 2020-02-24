@@ -88,6 +88,13 @@ def get_data(PCAtags = True, PCAvalue = 300):
         reduced = reduced[:, :PCAvalue]
         Xtoday = np.concatenate((Xtodayphase, reduced), 1)
 
+    ##########################################
+    # TODO: get pydrive and upload X and Y, run training in colab, X is very large
+    # https://medium.com/@annissouames99/how-to-upload-files-automatically-to-drive-with-python-ee19bb13dda
+    np.savetxt('data/train_X.csv', X, delimiter=',')
+    np.savetxt('data/train_Y.csv', Y, delimiter=',')
+    np.savetxt('data/today_X.csv', Xtoday, delimiter=',')
+
     print('size X: ' + str(X.shape))
     print('size Y: ' + str(Y.shape))
     print('size Xtoday: ' + str(Xtoday.shape))

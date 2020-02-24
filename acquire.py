@@ -16,6 +16,8 @@ today = date.today().strftime('%Y-%m-%d')
 
 ########################################################
 
+# TODO: look here for symbols i don't have: https://www.facebook.com/biopharmcatalyst
+
 def getlisted():
     print('running getlisted')
     # '''read in the listed files into db'''
@@ -31,17 +33,17 @@ def getlisted():
     ftp.login()
     ftp.cwd("/SymbolDirectory/")
 
-    def grabFile(fname):
-        localfile = open(fname, 'wb')
-        ftp.retrbinary('RETR ' + fname, localfile.write, 1024)
+    def grabFile(dir, fname):
+        localfile = open(dir + '/' + fname, 'wb')
+        ftp.retrbinary('RETR ' + dir + '/' + fname, localfile.write, 1024)
         localfile.close()
 
-    grabFile("nasdaqlisted.txt")
-    grabFile("otherlisted.txt")
+    grabFile("data", "nasdaqlisted.txt")
+    grabFile("data", "otherlisted.txt")
     ftp.quit()
 
-    df1 = pd.read_csv("nasdaqlisted.txt", sep='|')
-    df2 = pd.read_csv("otherlisted.txt", sep='|')
+    df1 = pd.read_csv("data/nasdaqlisted.txt", sep='|')
+    df2 = pd.read_csv("data/otherlisted.txt", sep='|')
 
     # make dictionarys out of dataframe for inserting to mongo
     r1 = json.loads(df1.T.to_json()).values()
@@ -85,7 +87,6 @@ def getlisted():
     listed.insert(records)
 
     print('ran getlisted')
-
 
 ########################################################
 
@@ -189,7 +190,6 @@ def marketcap():
 
     print('ran marketcap')
 
-
 ########################################################
 
 def tagcounts():
@@ -206,6 +206,7 @@ def tagcounts():
     # the goal is to avoid everyone not directly incentivized by novel development of treatments
     # with the way trials are tagging, some collaborator CROs may be listed, which we dont care about
     avoid = [
+        "Sanofi Aventis", # this one is just super high for some reason
         "National Institutes of Health",
         "National Cancer Institute",
         "Duke University",
@@ -382,7 +383,6 @@ def tagcounts():
 
 ########################################################
 
-
 def run_overrides():
     print('running ticker overrides')
     db = MongoClient("mongodb://localhost:27017").stocks
@@ -453,7 +453,6 @@ def mgcalculate():
                     "lastupdated": today
                 }}
             )
-
 
 ########################################################
 

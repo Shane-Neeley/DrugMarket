@@ -1,9 +1,8 @@
 # Mystuff
-pipelinevalue/dump
+dump
+data/*
 dump-restore.sh
 resources/result.txt
-
-
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

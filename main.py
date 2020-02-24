@@ -6,16 +6,18 @@ Market Cap (MC) are going after big targets w/ important trials. Therefore small
 similar trials should expect a similar large payout. To remove revenue from MC,
 subtract some revenue multiplier (5 years).
 
-DISCLAIMER: these assumptions are comletely foolish. If this is the kind of the quants on wall street do,
+DISCLAIMER: these assumptions are comletely foolish. If this is the kind of stuff the quants on Wall Street do,
 then they are insane.
 
 $ / trial = MC / Ntrials
 
 Create a neural network to learn to predict dollar value per trial:
+
 X = (Ntrials, [tags, nlp, paper's tags]) ... each sample is a trial and the data we can gather on it.
 Y = MC / N trials(company) ... the target is the dollar value per trial.
 
 Then pass a company's pipeline forward through this network to predict a learned pipeline value.
+
 Sort stocks by pipeline value for investment decisions.
 '''
 
@@ -32,7 +34,10 @@ import matplotlib.pyplot as plt
 import json
 from sklearn.utils import shuffle
 import operator
+import os
 from tabulate import tabulate
+# https://github.com/dmlc/xgboost/issues/1715
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 from pymongo import MongoClient
 db = MongoClient("mongodb://localhost:27017").stocks
@@ -43,7 +48,7 @@ db = MongoClient("mongodb://localhost:27017").stocks
 # configuration / hyperparameters
 TRAINING_SPLIT = 0.95 # raise to 1 when final model train on all data
 BATCH_SIZE = 128
-EPOCHS = 300
+EPOCHS = 100
 LEARNING_RATE = 0.0001
 OPTIMIZER = optimizers.RMSprop(lr=LEARNING_RATE, rho=0.9, epsilon=None, decay=0.0)
 HIDDEN_LAYERS = 6
@@ -109,7 +114,6 @@ for mgname in mgs_to_trialid:
                 Z = ynew[num][0]
                 mc = ((Z-1) * Ystd) + Ymean # remember to unshift the mean
                 mgPipeline[mgname] = mgPipeline[mgname] + int(mc)
-
 
 # calculate the percent diffs, using today's data in listed, not historical
 mgDiffs = {}
